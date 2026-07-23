@@ -111,9 +111,37 @@ const teach = stamp.teach!;
       </div>
     </div>
 
-    <!-- ===== BEAT 7 + PICKER (Phase 4) ===== -->
-    <section id="picker-root" class="stage-band" style="min-height: 60vh; padding: var(--sp-9) 0;">
-      <!-- picker mounts here -->
+    <!-- ===== BEAT 7 + PICKER ===== -->
+    <section id="picker-root" class="stage-band">
+      <div class="picker-intro measure">
+        <p class="kicker">Now you try.</p>
+        <h2>You watched them split. You never saw exactly how far.</h2>
+        <p class="invite">
+          You watched all nine split apart. You never saw exactly how far. Pick a line to pin where it lands today.
+        </p>
+      </div>
+
+      <div class="chiprail" role="group" aria-label="Pick a good to guess">
+        {data.goods.map((good) => (
+          <button class="chip" type="button" data-good={good.id} style={`--hue:${good.hue}`}>
+            <span class="sw" aria-hidden="true"></span>
+            <span class="lbl">{good.label}</span>
+            <span class="check" aria-hidden="true"></span>
+          </button>
+        ))}
+      </div>
+
+      <div class="guess-holder gridground" hidden id="guess-holder">
+        <svg id="guess" class="chart" viewBox="0 0 1000 520" role="group"
+             aria-label="Drag the handle to guess where this good's real price lands today."></svg>
+        <p class="guess-prompt" id="guess-prompt"></p>
+        <p class="guess-reveal" id="guess-reveal" aria-live="polite"></p>
+      </div>
+
+      <div class="capstone-wrap">
+        <button id="capstone-btn" class="capstone-btn" type="button" hidden>See every guess together</button>
+        <div id="capstone" hidden></div>
+      </div>
     </section>
   </main>
 
@@ -127,5 +155,6 @@ const teach = stamp.teach!;
 
   <script>
     import '../scripts/scroll.ts';
+    import '../scripts/picker.ts';
   </script>
 </Base>

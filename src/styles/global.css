@@ -110,6 +110,57 @@ svg.chart { width: 100%; height: auto; display: block; overflow: visible; positi
 /* no-JS: reveal the final verdict caption statically */
 :root:not([data-js-active]) .cap[data-final] { opacity: 1; }
 
+/* --- picker (beat 7) --- */
+#picker-root { padding: var(--sp-10) 0 var(--sp-9); }
+.picker-intro { margin-bottom: var(--sp-7); }
+.picker-intro .kicker { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--pole-up); margin-bottom: var(--sp-3); }
+.picker-intro h2 { font-size: var(--fs-beat); margin-bottom: var(--sp-3); }
+.picker-intro .invite { color: var(--ink-muted); max-width: 56ch; }
+
+.chiprail { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-bottom: var(--sp-6); z-index: var(--z-chiprail); position: relative; }
+.chip {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4); border: 1px solid var(--grid-strong); border-radius: 999px;
+  background: var(--paper-panel); color: var(--ink); font: inherit; font-size: 0.95rem; cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+}
+.chip .sw { width: 12px; height: 12px; border-radius: 50%; background: var(--hue); flex: none; box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.12); }
+.chip .check { width: 14px; height: 14px; flex: none; opacity: 0; }
+.chip:hover { border-color: var(--hue); transform: translateY(-1px); }
+.chip:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+.chip[aria-pressed="true"] { border-color: var(--hue); box-shadow: inset 0 0 0 1.5px var(--hue); }
+.chip[data-seen] .check { opacity: 1; }
+.chip[data-seen] .check::after { content: "✓"; color: var(--hue); font-size: 0.8rem; }
+.chip[data-seen] .sw { background: var(--hue); }
+
+.guess-holder { position: relative; margin-bottom: var(--sp-6); }
+.guess-prompt { max-width: 60ch; margin: var(--sp-3) auto 0; text-align: center; color: var(--ink-muted); font-size: var(--fs-body); }
+.guess-prompt .anchor { display: block; margin-top: var(--sp-2); color: var(--ink); }
+.guess-reveal { max-width: 62ch; margin: var(--sp-3) auto 0; text-align: center; font-size: var(--fs-body); color: var(--ink); min-height: 3.4rem; }
+.guess-reveal .big { font-family: var(--font-mono); font-weight: 500; }
+.guess-reveal .callout { display: block; margin-top: var(--sp-2); font-size: var(--fs-foot); color: var(--ink-muted); }
+.guess-reveal .callout .mono { color: var(--ink); }
+
+/* svg handle + guess line */
+.guess-handle { cursor: grab; }
+.guess-handle:active { cursor: grabbing; }
+.guess-handle circle { fill: var(--paper-panel); stroke: var(--ink); stroke-width: 2.5; }
+.guess-handle:focus-visible { outline: none; }
+.guess-handle:focus-visible circle { stroke: var(--pole-up); stroke-width: 3; }
+.guess-hint { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-muted); }
+
+.capstone-wrap { margin-top: var(--sp-6); }
+.capstone-btn {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-5); border: 1px solid var(--ink); border-radius: 999px;
+  background: var(--ink); color: var(--paper); font: inherit; font-size: 0.95rem; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.capstone-btn:hover { opacity: 0.88; }
+.capstone-btn:focus-visible { outline: var(--focus-ring); outline-offset: 3px; }
+#capstone { margin-top: var(--sp-6); }
+#capstone .cap-caption { max-width: 62ch; margin: var(--sp-4) auto 0; text-align: center; color: var(--ink-muted); }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 }
