@@ -1,0 +1,23 @@
+{
+  "name": "real-price-of-everything",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "data": "node --experimental-strip-types pipeline/src/build.ts",
+    "fonts": "node --experimental-strip-types pipeline/src/fonts.ts"
+  },
+  "dependencies": {
+    "astro": "^5.0.0",
+    "gsap": "^3.12.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0"
+  },
+  "engines": {
+    "node": ">=22.6"
+  }
+}

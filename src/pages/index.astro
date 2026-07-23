@@ -1,0 +1,44 @@
+---
+import Base from '../layouts/Base.astro';
+import FanChart from '../components/FanChart.astro';
+import seriesData from '../data/series.json';
+import type { SeriesData } from '../lib/types.ts';
+
+const data = seriesData as unknown as SeriesData;
+const { latestYear } = data.meta;
+---
+<Base>
+  <header class="masthead">
+    <span class="title">The Real Price of Everything</span>
+    <span class="src">1980&ndash;{latestYear} · real, inflation-adjusted</span>
+  </header>
+
+  <!-- DESIGN GATE placeholder page: the full labeled fan (beat-6 final state).
+       The scrollytelling beats (Phase 3) and picker (Phase 4) build on top of this. -->
+  <main>
+    <section class="measure" style="padding: var(--sp-9) 0 var(--sp-7);">
+      <p class="mono" style="color: var(--pole-up); font-size: var(--fs-label); margin-bottom: var(--sp-4);">
+        Everything costs more than it used to. That is not the whole story.
+      </p>
+      <h1 style="font-size: var(--fs-display); margin-bottom: var(--sp-4);">
+        The Real Price of Everything
+      </h1>
+      <p style="color: var(--ink-muted); max-width: 54ch;">
+        Nine everyday things, adjusted for inflation and indexed to 100 in 1980.
+        The things you can choose got cheaper. The things you cannot opt out of rose fastest.
+      </p>
+    </section>
+
+    <section class="stage-band gridground" style="padding: var(--sp-5) 0 var(--sp-8);">
+      <FanChart data={data} />
+    </section>
+  </main>
+
+  <footer class="pagefoot stage-band">
+    <span class="credit">Source: {data.meta.sourceCredit}</span>
+    <span class="foot">
+      Real price = each item's CPI (or average price) divided by all-items CPI-U, rebased to 100 at 1980
+      (childcare at 1991, its first full year). Deflator: {data.meta.deflatorLabel}.
+    </span>
+  </footer>
+</Base>

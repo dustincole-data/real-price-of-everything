@@ -1,0 +1,18 @@
+# deps + build
+node_modules/
+dist/
+.astro/
+
+# local data pipeline cache (raw FRED/BLS downloads) — NOT the computed output
+pipeline/raw/
+*.csv
+
+# computed JSON in src/data/ IS committed (build is hermetic) — do not ignore it
+
+# tooling / secrets
+.vercel
+.env*
+
+# agent + planning scratch (local only)
+.claude/
+.scratch/

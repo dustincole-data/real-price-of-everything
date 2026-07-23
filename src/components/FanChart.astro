@@ -1,0 +1,97 @@
+---
+import type { SeriesData, Good } from '../lib/types.ts';
+import {
+  FAN_FRAME as F, fanPoints, linePath, xAtYear, yAtValue, dodge, plotW,
+} from '../lib/chart.ts';
+
+interface Props {
+  data: SeriesData;
+  progress?: number; // 0 = collapsed at 100, 1 = fully fanned (default)
+  yMax?: number;
+}
+const { data, progress = 1, yMax = 380 } = Astro.props as Props;
+const { years, latestYear, baseYear } = data.meta;
+const yMin = 0;
+
+// two-pole stroke color: hue/chroma fixed per pole, luminance varied within the pole
+function poleMembers(pole: 'up' | 'down'): Good[] {
+  const list = data.goods.filter((g) => g.pole === pole);
+  // order by magnitude so the extreme line gets the darkest ink
+  return pole === 'up'
+    ? list.sort((a, b) => b.realIndexToday - a.realIndexToday)
+    : list.sort((a, b) => a.realIndexToday - b.realIndexToday);
+}
+const up = poleMembers('up');
+const down = poleMembers('down');
+function strokeFor(g: Good): string {
+  const pole = g.pole === 'up' ? up : down;
+  const i = pole.indexOf(g);
+  const t = pole.length > 1 ? i / (pole.length - 1) : 0;
+  return g.pole === 'up'
+    ? `oklch(${(0.5 + t * 0.12).toFixed(3)} 0.185 18)`
+    : `oklch(${(0.5 + t * 0.14).toFixed(3)} 0.115 240)`;
+}
+
+// render order: goods (bottom) first, services last so rose ends sit on top
+const ordered = [...down, ...up];
+
+// geometry per good
+const lines = ordered.map((g) => {
+  const pts = fanPoints(g.real, years, yMin, yMax, F, progress);
+  const tip = pts[pts.length - 1];
+  return { g, d: linePath(pts), tipX: tip[0], tipY: tip[1], stroke: strokeFor(g), emphasis: g.id === 'college' };
+});
+
+// dodge the name labels in the right gutter
+const dodged = dodge(
+  lines.map((l) => ({ key: l.g.id, y: l.tipY })),
+  16, F.padT + 4, F.H - F.padB - 4,
+);
+const gutterX = F.W - F.padR + 12;
+
+const yTicks = [0, 100, 200, 300];
+const xTicks = [1980, 1990, 2000, 2010, 2020];
+const baseY = yAtValue(100, yMin, yMax, F);
+const plotRight = F.padL + plotW(F);
+---
+
+<svg class="chart" viewBox={`0 0 ${F.W} ${F.H}`} role="img"
+     aria-label="Nine everyday things, real price indexed to 100 in 1980. Services rise far above the inflation baseline; goods fall below or hold near it.">
+  <!-- y grid + ticks -->
+  {yTicks.map((v) => {
+    const y = yAtValue(v, yMin, yMax, F);
+    return (
+      <g>
+        <line class={`axis-rule${v === 0 ? ' zero' : ''}`} x1={F.padL} y1={y} x2={plotRight} y2={y} />
+        <text class="axis-tick" x={F.padL - 10} y={y + 4} text-anchor="end">{v}</text>
+      </g>
+    );
+  })}
+  <!-- x ticks -->
+  {xTicks.map((yr) => (
+    <text class="axis-tick" x={xAtYear(yr, years[0], latestYear, F)} y={F.H - F.padB + 22} text-anchor="middle">{yr}</text>
+  ))}
+
+  <!-- inflation baseline at 100 -->
+  <line class="baseline-line" x1={F.padL} y1={baseY} x2={plotRight} y2={baseY} />
+  <text class="baseline-lbl" x={F.padL} y={baseY - 8}>100 = kept pace with inflation</text>
+
+  <!-- lines -->
+  {lines.map((l) => (
+    <path d={l.d} fill="none" stroke={l.stroke}
+          stroke-width={l.emphasis ? 2.9 : 2.3}
+          stroke-linejoin="round" stroke-linecap="round" />
+  ))}
+
+  <!-- end dots + leaders + name-only labels (dodged, no value labels) -->
+  {lines.map((l) => {
+    const ly = dodged.get(l.g.id)!;
+    return (
+      <g>
+        <circle cx={l.tipX} cy={l.tipY} r="3" fill={l.stroke} />
+        <path class="leader" stroke={l.stroke} d={`M${l.tipX + 3} ${l.tipY} L${gutterX - 5} ${ly}`} />
+        <text class="line-lbl" x={gutterX} y={ly} fill={l.stroke}>{l.g.label}</text>
+      </g>
+    );
+  })}
+</svg>

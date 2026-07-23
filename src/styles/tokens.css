@@ -1,0 +1,47 @@
+/* Design tokens — §2 of the build spec. Calm chrome + colorful graphics (OWID/Distill).
+   Saturation lives only in the marks; page neutrals carry the chrome. */
+
+:root {
+  /* --- 2.1 ground & chrome --- */
+  --paper: oklch(0.985 0.003 250);        /* cool near-white, no cream */
+  --paper-panel: oklch(0.995 0.002 250);  /* chip/panel lift */
+  --grid: oklch(0.93 0.004 250);          /* faint ruled measurement grid, 1px */
+  --grid-strong: oklch(0.88 0.006 250);   /* axis rules */
+  --ink: oklch(0.24 0.02 255);            /* body + headings */
+  --ink-muted: oklch(0.46 0.02 255);      /* captions, axis labels, footnotes (~7:1) */
+  --ink-faint: oklch(0.62 0.015 255);     /* tertiary */
+
+  /* --- 2.2 color System A: the scroll fan (two poles, not rainbow) --- */
+  --pole-up: oklch(0.57 0.19 18);         /* services ↑ warm rose */
+  --pole-down: oklch(0.58 0.12 240);      /* goods ↓/held cool blue */
+  --baseline: oklch(0.60 0.015 255);      /* dashed inflation baseline */
+  --tide: oklch(0.72 0.045 250);          /* beat-2 inflation tide area */
+
+  /* --- 2.3 type --- */
+  --font-sans: 'Libre Franklin', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Spline Sans Mono', ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+
+  --fs-display: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+  --fs-beat: clamp(1.5rem, 1.2rem + 1.4vw, 2rem);
+  --fs-body: clamp(1.05rem, 1rem + 0.3vw, 1.18rem);
+  --fs-label: 0.8125rem;
+  --fs-foot: 0.8125rem;
+
+  --lh-body: 1.6;
+  --lh-caption: 1.5;
+  --tracking-display: -0.02em;
+
+  /* --- 2.4 spacing (rem scale) --- */
+  --sp-1: 0.25rem; --sp-2: 0.5rem; --sp-3: 0.75rem; --sp-4: 1rem;
+  --sp-5: 1.5rem; --sp-6: 2rem; --sp-7: 3rem; --sp-8: 4rem; --sp-9: 6rem; --sp-10: 8rem;
+
+  /* --- 2.4 layout --- */
+  --measure: min(66ch, 92vw);   /* single reading column */
+  --stage-w: min(1100px, 94vw); /* wider chart band */
+
+  /* --- 2.4 z-index (semantic, no 999) --- */
+  --z-grid: 0; --z-chart: 10; --z-caption: 20; --z-chiprail: 30; --z-capstone: 40;
+
+  /* --- focus --- */
+  --focus-ring: 2px solid var(--ink);
+}
