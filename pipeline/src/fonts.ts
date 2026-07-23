@@ -15,7 +15,7 @@ const UA =
   '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
 const CSS_URL =
-  'https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap';
+  'https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=Spline+Sans+Mono:wght@400&display=swap';
 
 function slug(family: string): string {
   return family.toLowerCase().replace(/\s+/g, '-');

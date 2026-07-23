@@ -43,14 +43,24 @@ const teach = stamp.teach!;
       <p class="go">Scroll ↓ and watch the single story come apart.</p>
     </section>
 
+    <!-- linear narrative for screen readers (the scroll is visual; this carries the meaning) -->
+    <p class="sr-only">
+      What follows is an inflation-adjusted price chart that transforms as you scroll, indexed to 100 in 1980.
+      First it teaches the idea on a single first-class stamp: its price climbed in dollars, but once you subtract
+      inflation the stamp barely moved. Then it applies that lens to nine everyday things at once, and they split
+      in two. The things you can choose fall below the inflation line or hold near it: televisions and clothing drop
+      steeply, gas and eggs swing but land near or below where they began, and a stamp holds. The things you cannot
+      opt out of rise far above it: college tuition climbs the most, then healthcare, then childcare, then rent.
+      After the chart, you can pick any of the nine and guess where its real price lands today.
+    </p>
+
     <!-- ===== PINNED RIG — beats 2 to 6, one chart transforms ===== -->
     <div id="scroll-root" data-scroll>
       <div id="stage">
         <div class="stage-inner stage-band">
           <div class="chart-holder gridground">
-            <!-- JS-driven interactive chart (built by scroll.ts) -->
-            <svg id="live" class="chart" viewBox="0 0 1000 560" role="img"
-                 aria-label="An inflation-adjusted price chart that transforms as you scroll."></svg>
+            <!-- JS-driven interactive chart (built by scroll.ts); decorative for SR (narrated above + in captions) -->
+            <svg id="live" class="chart" viewBox="0 0 1000 560" aria-hidden="true"></svg>
             <!-- no-JS / reduced-motion fallback: the full labeled fan -->
             <div id="fallback"><FanChart data={data} /></div>
           </div>
