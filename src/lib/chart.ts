@@ -3,13 +3,16 @@
 // scale functions + a progress value; no tweened SVG attributes (honors the
 // gsap-scrub-from-conflict guardrail by construction).
 
+import type { Good } from './types.ts';
+
 export interface Frame {
   W: number; H: number;
   padL: number; padR: number; padT: number; padB: number;
 }
 
 export const FAN_FRAME: Frame = { W: 1000, H: 560, padL: 54, padR: 138, padT: 40, padB: 46 };
-export const TEACH_FRAME: Frame = { W: 1000, H: 520, padL: 60, padR: 120, padT: 36, padB: 46 };
+// same vertical extent as FAN_FRAME so the beat-2 -> beat-3 crossfade does not jump
+export const TEACH_FRAME: Frame = { W: 1000, H: 560, padL: 60, padR: 120, padT: 40, padB: 46 };
 
 export const plotW = (f: Frame) => f.W - f.padL - f.padR;
 export const plotH = (f: Frame) => f.H - f.padT - f.padB;
@@ -91,4 +94,27 @@ export function axisTicks(max: number, step: number): number[] {
   const out: number[] = [];
   for (let v = 0; v <= max + 1e-6; v += step) out.push(v);
   return out;
+}
+
+/**
+ * Two-pole fan stroke per good: hue + chroma fixed per pole (System A — services
+ * rose, goods blue), luminance varied within the pole so lines separate while the
+ * two masses still read as masses. The extreme line in each pole gets the darkest
+ * ink. Returns id -> oklch string. Used by both the static FanChart and the scrub.
+ */
+export function assignFanColors(goods: Good[]): Map<string, string> {
+  const byPole = (p: 'up' | 'down') =>
+    goods
+      .filter((g) => g.pole === p)
+      .sort((a, b) => (p === 'up' ? b.realIndexToday - a.realIndexToday : a.realIndexToday - b.realIndexToday));
+  const m = new Map<string, string>();
+  const put = (arr: Good[], L0: number, dL: number, C: number, H: number) => {
+    arr.forEach((g, i) => {
+      const t = arr.length > 1 ? i / (arr.length - 1) : 0;
+      m.set(g.id, `oklch(${(L0 + t * dL).toFixed(3)} ${C} ${H})`);
+    });
+  };
+  put(byPole('up'), 0.5, 0.12, 0.185, 18); // services — rose
+  put(byPole('down'), 0.5, 0.14, 0.115, 240); // goods — blue
+  return m;
 }

@@ -77,6 +77,39 @@ svg.chart { width: 100%; height: auto; display: block; overflow: visible; positi
 .line-lbl { font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; dominant-baseline: middle; }
 .leader { stroke-width: 1; fill: none; opacity: 0.5; }
 
+/* --- hero (beat 1, unpinned) --- */
+.hero { padding: clamp(var(--sp-8), 12vh, var(--sp-10)) 0 var(--sp-8); }
+.hero .kicker { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--pole-up); margin-bottom: var(--sp-4); letter-spacing: 0; }
+.hero h1 { font-size: var(--fs-display); margin-bottom: var(--sp-4); }
+.hero .lede { color: var(--ink-muted); max-width: 52ch; font-size: 1.2rem; }
+.nominal-wall { display: flex; flex-wrap: wrap; gap: var(--sp-6) var(--sp-8); margin-top: var(--sp-7); }
+.nominal-wall .stat { display: flex; flex-direction: column; gap: 2px; }
+.nominal-wall .stat .k { font-size: var(--fs-label); color: var(--ink-muted); }
+.nominal-wall .stat .v { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 500; letter-spacing: -0.02em; }
+.nominal-wall .stat .v .arrow { color: var(--ink-faint); margin: 0 0.35em; }
+.hero .go { margin-top: var(--sp-7); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-faint); }
+
+/* --- pinned scroll rig --- */
+#scroll-root { position: relative; height: 760vh; }
+:root:not([data-js-active]) #scroll-root { height: auto; } /* no pin without JS */
+#stage { height: 100vh; display: flex; flex-direction: column; justify-content: center; overflow: clip; padding-top: 3rem; }
+.stage-inner { width: 100%; }
+.chart-holder { position: relative; }
+#live { display: none; } /* shown by scroll.ts once GSAP takes over */
+[data-js-active] #live { display: block; }
+[data-js-active] #fallback { display: none; }
+
+/* captions cross-fade over the pinned chart */
+.caps { position: relative; height: 8.5rem; max-width: 62ch; margin: var(--sp-4) auto 0; padding-inline: var(--sp-4); z-index: var(--z-caption); }
+.cap { position: absolute; inset: 0 var(--sp-4); margin-inline: auto; font-size: var(--fs-beat); line-height: var(--lh-caption); color: var(--ink); text-wrap: pretty; opacity: 0; will-change: opacity, transform; }
+.cap.lead { font-weight: 500; }
+.cap b { font-weight: 600; }
+.cap .soft { color: var(--ink-muted); }
+.cap .note { display: block; margin-top: var(--sp-2); font-size: var(--fs-foot); color: var(--ink-muted); }
+.cap .nom { font-family: var(--font-mono); font-size: 0.9rem; color: var(--ink-muted); }
+/* no-JS: reveal the final verdict caption statically */
+:root:not([data-js-active]) .cap[data-final] { opacity: 1; }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 }

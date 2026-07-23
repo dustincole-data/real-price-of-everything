@@ -1,7 +1,7 @@
 ---
-import type { SeriesData, Good } from '../lib/types.ts';
+import type { SeriesData } from '../lib/types.ts';
 import {
-  FAN_FRAME as F, fanPoints, linePath, xAtYear, yAtValue, dodge, plotW,
+  FAN_FRAME as F, fanPoints, linePath, xAtYear, yAtValue, dodge, plotW, assignFanColors,
 } from '../lib/chart.ts';
 
 interface Props {
@@ -10,36 +10,19 @@ interface Props {
   yMax?: number;
 }
 const { data, progress = 1, yMax = 380 } = Astro.props as Props;
-const { years, latestYear, baseYear } = data.meta;
+const { years, latestYear } = data.meta;
 const yMin = 0;
 
-// two-pole stroke color: hue/chroma fixed per pole, luminance varied within the pole
-function poleMembers(pole: 'up' | 'down'): Good[] {
-  const list = data.goods.filter((g) => g.pole === pole);
-  // order by magnitude so the extreme line gets the darkest ink
-  return pole === 'up'
-    ? list.sort((a, b) => b.realIndexToday - a.realIndexToday)
-    : list.sort((a, b) => a.realIndexToday - b.realIndexToday);
-}
-const up = poleMembers('up');
-const down = poleMembers('down');
-function strokeFor(g: Good): string {
-  const pole = g.pole === 'up' ? up : down;
-  const i = pole.indexOf(g);
-  const t = pole.length > 1 ? i / (pole.length - 1) : 0;
-  return g.pole === 'up'
-    ? `oklch(${(0.5 + t * 0.12).toFixed(3)} 0.185 18)`
-    : `oklch(${(0.5 + t * 0.14).toFixed(3)} 0.115 240)`;
-}
-
+// two-pole stroke color (shared with the scrub so static + live match exactly)
+const colors = assignFanColors(data.goods);
 // render order: goods (bottom) first, services last so rose ends sit on top
-const ordered = [...down, ...up];
+const ordered = [...data.goods].sort((a, b) => (a.pole === b.pole ? 0 : a.pole === 'down' ? -1 : 1));
 
 // geometry per good
 const lines = ordered.map((g) => {
   const pts = fanPoints(g.real, years, yMin, yMax, F, progress);
   const tip = pts[pts.length - 1];
-  return { g, d: linePath(pts), tipX: tip[0], tipY: tip[1], stroke: strokeFor(g), emphasis: g.id === 'college' };
+  return { g, d: linePath(pts), tipX: tip[0], tipY: tip[1], stroke: colors.get(g.id)!, emphasis: g.id === 'college' };
 });
 
 // dodge the name labels in the right gutter

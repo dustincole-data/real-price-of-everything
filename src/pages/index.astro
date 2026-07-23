@@ -2,10 +2,15 @@
 import Base from '../layouts/Base.astro';
 import FanChart from '../components/FanChart.astro';
 import seriesData from '../data/series.json';
-import type { SeriesData } from '../lib/types.ts';
+import type { SeriesData, Good } from '../lib/types.ts';
 
 const data = seriesData as unknown as SeriesData;
 const { latestYear } = data.meta;
+const g = (id: string) => data.goods.find((x) => x.id === id) as Good;
+const stamp = g('stamp');
+const gas = g('gas');
+const eggs = g('eggs');
+const teach = stamp.teach!;
 ---
 <Base>
   <header class="masthead">
@@ -13,24 +18,102 @@ const { latestYear } = data.meta;
     <span class="src">1980&ndash;{latestYear} · real, inflation-adjusted</span>
   </header>
 
-  <!-- DESIGN GATE placeholder page: the full labeled fan (beat-6 final state).
-       The scrollytelling beats (Phase 3) and picker (Phase 4) build on top of this. -->
   <main>
-    <section class="measure" style="padding: var(--sp-9) 0 var(--sp-7);">
-      <p class="mono" style="color: var(--pole-up); font-size: var(--fs-label); margin-bottom: var(--sp-4);">
-        Everything costs more than it used to. That is not the whole story.
+    <!-- ===== BEAT 1 — the shared lie (unpinned hero) ===== -->
+    <section class="hero measure">
+      <p class="kicker">Everything costs more than it used to.</p>
+      <h1>The Real Price of Everything</h1>
+      <p class="lede">
+        A stamp. A gallon of gas. A year of college. The numbers only go up.
       </p>
-      <h1 style="font-size: var(--fs-display); margin-bottom: var(--sp-4);">
-        The Real Price of Everything
-      </h1>
-      <p style="color: var(--ink-muted); max-width: 54ch;">
-        Nine everyday things, adjusted for inflation and indexed to 100 in 1980.
-        The things you can choose got cheaper. The things you cannot opt out of rose fastest.
-      </p>
+      <div class="nominal-wall">
+        <div class="stat">
+          <span class="k">A first-class stamp</span>
+          <span class="v">{teach.thenCents}¢<span class="arrow">→</span>{teach.nowCents}¢</span>
+        </div>
+        <div class="stat">
+          <span class="k">A gallon of gas</span>
+          <span class="v">{gas.nominalThen}<span class="arrow">→</span>{gas.nominalNow}</span>
+        </div>
+        <div class="stat">
+          <span class="k">A dozen eggs</span>
+          <span class="v">{eggs.nominalThen}<span class="arrow">→</span>{eggs.nominalNow}</span>
+        </div>
+      </div>
+      <p class="go">Scroll ↓ and watch the single story come apart.</p>
     </section>
 
-    <section class="stage-band gridground" style="padding: var(--sp-5) 0 var(--sp-8);">
-      <FanChart data={data} />
+    <!-- ===== PINNED RIG — beats 2 to 6, one chart transforms ===== -->
+    <div id="scroll-root" data-scroll>
+      <div id="stage">
+        <div class="stage-inner stage-band">
+          <div class="chart-holder gridground">
+            <!-- JS-driven interactive chart (built by scroll.ts) -->
+            <svg id="live" class="chart" viewBox="0 0 1000 560" role="img"
+                 aria-label="An inflation-adjusted price chart that transforms as you scroll."></svg>
+            <!-- no-JS / reduced-motion fallback: the full labeled fan -->
+            <div id="fallback"><FanChart data={data} /></div>
+          </div>
+
+          <div class="caps" id="caps" aria-hidden="false">
+            <!-- beat 2: the teach (stamp) -->
+            <p class="cap lead" data-in="0.00" data-out="0.10">
+              A first-class stamp went from <b>{teach.thenCents}¢</b> in {teach.baseYear} to <b>{teach.nowCents}¢</b> today. Classic proof that everything gets pricier.
+            </p>
+            <p class="cap" data-in="0.10" data-out="0.185">
+              But <b>every price rose</b> in those years. That rise is inflation. The shared tide.
+            </p>
+            <p class="cap lead" data-in="0.185" data-out="0.285">
+              Subtract the tide and <b>the stamp barely moved.</b> <span class="soft">It did not get more expensive. Your dollar got smaller.</span>
+            </p>
+            <!-- handoff -->
+            <p class="cap lead" data-in="0.285" data-out="0.37">Now apply that to <b>everything at once.</b></p>
+            <!-- beat 3: the split -->
+            <p class="cap" data-in="0.37" data-out="0.45">
+              <b>It was never one number.</b> Strip out inflation and the single story splits. Some things fell. Some climbed.
+            </p>
+            <!-- beat 4: honor abundance (goods) -->
+            <p class="cap" data-in="0.45" data-out="0.515" data-good="gas">
+              Gas swings with every crisis and boom. Through all the noise, in real terms a gallon costs <b>less</b> than it did in 1980.
+              <span class="nom">{gas.nominalThen} then · {gas.nominalNow} now</span>
+            </p>
+            <p class="cap" data-in="0.515" data-out="0.58" data-good="tv">
+              A television is the clearest case. Adjusted for inflation, and for how much more it does, the price <b>falls off the bottom of the chart.</b>
+              <span class="note">Constant-quality: a 2024 4K set measured against a 1960 console.</span>
+            </p>
+            <p class="cap" data-in="0.58" data-out="0.64" data-good="clothing">
+              Clothing gets <b>quietly cheaper,</b> decade after decade.
+              <span class="note">Constant-quality apparel basket, not the shirt on the rack.</span>
+            </p>
+            <p class="cap" data-in="0.64" data-out="0.705" data-good="eggs">
+              Eggs are the noisy one. Bird-flu years spike the line hard, then it falls back. Strip out inflation and the story is mostly weather: eggs land <b>about where they began.</b>
+            </p>
+            <!-- beat 5: the squeeze (services) -->
+            <p class="cap" data-in="0.705" data-out="0.77" data-good="college">
+              College tuition is the line everyone expects. In real terms it climbs, <b>and keeps climbing.</b>
+            </p>
+            <p class="cap" data-in="0.77" data-out="0.83" data-good="healthcare">
+              Medical care never stops rising. Not a spike. <b>A slope that steepens.</b>
+            </p>
+            <p class="cap" data-in="0.83" data-out="0.885" data-good="rent">
+              Rent is the one you <b>cannot opt out of.</b> Measured as what people actually pay to keep a roof, it rises across the whole window.
+              <span class="note">CPI rent of a primary residence.</span>
+            </p>
+            <p class="cap" data-in="0.885" data-out="0.945" data-good="childcare">
+              Childcare arrives late, around 1990, and <b>climbs the fastest of all.</b> The newest pressure hits hardest.
+            </p>
+            <!-- beat 6: the frame -->
+            <p class="cap lead" data-in="0.945" data-out="1.001" data-final>
+              One axis. Nine everyday things, adjusted for inflation. <b>The things you can choose got cheaper. The things you cannot opt out of rose fastest.</b>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== BEAT 7 + PICKER (Phase 4) ===== -->
+    <section id="picker-root" class="stage-band" style="min-height: 60vh; padding: var(--sp-9) 0;">
+      <!-- picker mounts here -->
     </section>
   </main>
 
@@ -41,4 +124,8 @@ const { latestYear } = data.meta;
       (childcare at 1991, its first full year). Deflator: {data.meta.deflatorLabel}.
     </span>
   </footer>
+
+  <script>
+    import '../scripts/scroll.ts';
+  </script>
 </Base>
