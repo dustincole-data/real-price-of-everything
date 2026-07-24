@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="The Real Price of Everything">
+  <!-- The divergence mark: from a shared origin on the inflation baseline, one
+       strand climbs (services) and one falls (goods) once inflation is stripped. -->
+  <line x1="16" y1="50" x2="84" y2="50" stroke="#8b90a0" stroke-width="3" stroke-linecap="round" stroke-dasharray="0.5 7.5" opacity="0.6"/>
+  <path d="M24 50 C 44 50 54 34 82 20" fill="none" stroke="#FB7185" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 50 C 44 50 54 66 82 80" fill="none" stroke="#22D3EE" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="24" cy="50" r="4.5" fill="#64748b"/>
+  <circle cx="82" cy="20" r="5.5" fill="#FB7185"/>
+  <circle cx="82" cy="80" r="5.5" fill="#22D3EE"/>
+</svg>

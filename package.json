@@ -9,7 +9,8 @@
     "preview": "astro preview",
     "data": "node --experimental-strip-types pipeline/src/build.ts",
     "fonts": "node --experimental-strip-types pipeline/src/fonts.ts",
-    "og": "node --experimental-strip-types scripts/og.ts"
+    "og": "node --experimental-strip-types scripts/og.ts",
+    "icons": "node --experimental-strip-types scripts/icons.ts"
   },
   "dependencies": {
     "astro": "^5.0.0",
