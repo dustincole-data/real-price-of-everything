@@ -1,6 +1,5 @@
 ---
 import Base from '../layouts/Base.astro';
-import FanChart from '../components/FanChart.astro';
 import seriesData from '../data/series.json';
 import type { SeriesData, Good } from '../lib/types.ts';
 
@@ -10,7 +9,30 @@ const g = (id: string) => data.goods.find((x) => x.id === id) as Good;
 const stamp = g('stamp');
 const gas = g('gas');
 const eggs = g('eggs');
-const teach = stamp.teach!;
+
+// ---- static final skyline (no-JS + reduced-motion fallback; also the verdict frame) ----
+// Ascending real-2024 endpoint = a rising staircase, blue below / rose above the 100 line.
+const EMOJI: Record<string, string> = {
+  tv: '📺', clothing: '👕', gas: '⛽', eggs: '🥚', stamp: '✉️',
+  rent: '🏠', childcare: '🍼', healthcare: '🏥', college: '🎓',
+};
+const sky = [...data.goods].sort((a, b) => a.realIndexToday - b.realIndexToday);
+const SW = 1000, SH = 560, SDMAX = 380;
+const sPL = 46, sPR = SW - 22, sPT = Math.round(SH * 0.09), sPB = SH - 40, sPW = sPR - sPL;
+const syFor = (v: number) => sPB - (Math.max(0, Math.min(SDMAX, v)) / SDMAX) * (sPB - sPT);
+const sSlot = sPW / sky.length;
+const sBarW = Math.min(56, sSlot * 0.52);
+const sBaseY = syFor(100);
+const skyBars = sky.map((gd, i) => {
+  const x = sPL + (i + 0.5) * sSlot;
+  const y = syFor(gd.realIndexToday);
+  const pct = Math.round(gd.realIndexToday - 100);
+  return {
+    gd, x, y, h: sPB - y, pct,
+    color: gd.pole === 'up' ? 'var(--pole-up)' : 'var(--pole-down)',
+    emoji: EMOJI[gd.id],
+  };
+});
 ---
 <Base>
   <header class="masthead">
@@ -19,17 +41,15 @@ const teach = stamp.teach!;
   </header>
 
   <main>
-    <!-- ===== BEAT 1 — the shared lie (unpinned hero) ===== -->
+    <!-- ===== BEAT 1 — the shared lie (normal flow, above the sticky stage) ===== -->
     <section class="hero measure">
       <p class="kicker">Everything costs more than it used to.</p>
       <h1>The Real Price of Everything</h1>
-      <p class="lede">
-        A stamp. A gallon of gas. A year of college. The numbers only go up.
-      </p>
+      <p class="lede">A stamp. A gallon of gas. A dozen eggs. The numbers only ever go up.</p>
       <div class="nominal-wall">
         <div class="stat">
           <span class="k">A first-class stamp</span>
-          <span class="v">{teach.thenCents}¢<span class="arrow">→</span>{teach.nowCents}¢</span>
+          <span class="v">{stamp.nominalThen}<span class="arrow">→</span>{stamp.nominalNow}</span>
         </div>
         <div class="stat">
           <span class="k">A gallon of gas</span>
@@ -51,120 +71,108 @@ const teach = stamp.teach!;
       in two. The things you can choose fall below the inflation line or hold near it: televisions and clothing drop
       steeply, gas and eggs swing but land near or below where they began, and a stamp holds. The things you cannot
       opt out of rise far above it: college tuition climbs the most, then healthcare, then childcare, then rent.
-      After the chart, you can pick any of the nine and guess where its real price lands today.
     </p>
 
-    <!-- ===== PINNED RIG — beats 2 to 6, one chart transforms ===== -->
-    <div id="scroll-root" data-scroll>
-      <div id="stage">
-        <div class="stage-inner stage-band">
-          <div class="chart-holder gridground">
-            <!-- JS-driven interactive chart (built by scroll.ts); decorative for SR (narrated above + in captions) -->
-            <svg id="live" class="chart" viewBox="0 0 1000 560" aria-hidden="true"></svg>
-            <!-- no-JS / reduced-motion fallback: the full labeled fan -->
-            <div id="fallback"><FanChart data={data} /></div>
-          </div>
+    <!-- ===== DRAIN THE TIDE — sticky stage, beats 2 to 6 ===== -->
+    <div class="scrolly" id="scrolly">
+      <div class="stage" id="stage">
+        <div class="vizwrap gridground">
+          <!-- JS-driven chart (built by scroll.ts); decorative for SR — narrated above + in captions -->
+          <svg id="viz" role="img" aria-hidden="true"></svg>
+          <!-- no-JS / reduced-motion fallback: the static final skyline -->
+          <svg id="skyline" class="chart" viewBox={`0 0 ${SW} ${SH}`} role="img"
+               aria-label="Nine everyday things, real price indexed to 100 in 1980. Services rise far above the inflation baseline; goods fall below or hold near it.">
+            {[0, 100, 200, 300].map((v) => {
+              const y = syFor(v);
+              return (
+                <g>
+                  <line class="rule" x1={sPL} y1={y} x2={sPR} y2={y} />
+                  <text class="tick" x={sPL - 8} y={y + 4} text-anchor="end">{v}</text>
+                </g>
+              );
+            })}
+            <line class="base" x1={sPL} y1={sBaseY} x2={sPR} y2={sBaseY} />
+            <text class="baselbl" x={sPL} y={sBaseY - 6}>kept pace with inflation</text>
+            {skyBars.map((b) => (
+              <g>
+                <rect x={b.x - sBarW / 2} y={b.y} width={sBarW} height={b.h} rx="2.5" fill={b.color} fill-opacity="0.9" />
+                <text class="emoji" x={b.x} y={b.y - 16} font-size="20">{b.emoji}</text>
+                <text class="val" x={b.x} y={b.y - 32} font-size="12" fill={b.color}>
+                  {b.pct >= 0 ? '+' : '−'}{Math.abs(b.pct)}%
+                </text>
+                <text class="glab" x={b.x} y={sPB + 19} font-size="11">{b.gd.label}</text>
+              </g>
+            ))}
+          </svg>
+        </div>
 
-          <div class="caps" id="caps" aria-hidden="false">
-            <!-- beat 2: the teach (stamp) -->
-            <p class="cap lead" data-in="0.00" data-out="0.10">
-              A first-class stamp went from <b>{teach.thenCents}¢</b> in {teach.baseYear} to <b>{teach.nowCents}¢</b> today. Classic proof that everything gets pricier.
-            </p>
-            <p class="cap" data-in="0.10" data-out="0.185">
-              But <b>every price rose</b> in those years. That rise is inflation. The shared tide.
-            </p>
-            <p class="cap lead" data-in="0.185" data-out="0.285">
-              Subtract the tide and <b>the stamp barely moved.</b> <span class="soft">It did not get more expensive. Your dollar got smaller.</span>
-            </p>
-            <!-- handoff -->
-            <p class="cap lead" data-in="0.285" data-out="0.37">Now apply that to <b>everything at once.</b></p>
-            <!-- beat 3: the split -->
-            <p class="cap" data-in="0.37" data-out="0.45">
-              <b>It was never one number.</b> Strip out inflation and the single story splits. Some things fell. Some climbed.
-            </p>
-            <!-- beat 4: honor abundance (goods) -->
-            <p class="cap" data-in="0.45" data-out="0.515" data-good="gas">
-              Gas swings with every crisis and boom. Through all the noise, in real terms a gallon costs <b>less</b> than it did in 1980.
-              <span class="nom">{gas.nominalThen} then · {gas.nominalNow} now</span>
-            </p>
-            <p class="cap" data-in="0.515" data-out="0.58" data-good="tv">
-              A television is the clearest case. Adjusted for inflation, and for how much more it does, the price <b>falls off the bottom of the chart.</b>
-              <span class="note">Constant-quality: a 2024 4K set measured against a 1960 console.</span>
-            </p>
-            <p class="cap" data-in="0.58" data-out="0.64" data-good="clothing">
-              Clothing gets <b>quietly cheaper,</b> decade after decade.
-              <span class="note">Constant-quality apparel basket, not the shirt on the rack.</span>
-            </p>
-            <p class="cap" data-in="0.64" data-out="0.705" data-good="eggs">
-              Eggs are the noisy one. Bird-flu years spike the line hard, then it falls back. Strip out inflation and the story is mostly weather: eggs land <b>about where they began.</b>
-            </p>
-            <!-- beat 5: the squeeze (services) -->
-            <p class="cap" data-in="0.705" data-out="0.77" data-good="college">
-              College tuition is the line everyone expects. In real terms it climbs, <b>and keeps climbing.</b>
-            </p>
-            <p class="cap" data-in="0.77" data-out="0.83" data-good="healthcare">
-              Medical care never stops rising. Not a spike. <b>A slope that steepens.</b>
-            </p>
-            <p class="cap" data-in="0.83" data-out="0.885" data-good="rent">
-              Rent is the one you <b>cannot opt out of.</b> Measured as what people actually pay to keep a roof, it rises across the whole window.
-              <span class="note">CPI rent of a primary residence.</span>
-            </p>
-            <p class="cap" data-in="0.885" data-out="0.945" data-good="childcare">
-              Childcare arrives late, around 1990, and <b>climbs the fastest of all.</b> The newest pressure hits hardest.
-            </p>
-            <!-- beat 6: the frame -->
-            <p class="cap lead" data-in="0.945" data-out="1.001" data-final>
-              One axis. Nine everyday things, adjusted for inflation. <b>The things you can choose got cheaper. The things you cannot opt out of rose fastest.</b>
-            </p>
-          </div>
+        <div class="capbox" id="caps">
+          <!-- beat 2 — teach on one stamp -->
+          <p class="cap" data-in="0.00" data-out="0.075">
+            A first-class stamp cost <b>{stamp.nominalThen}</b> in 1980.
+          </p>
+          <p class="cap" data-in="0.075" data-out="0.15">
+            In dollars it climbed to <b>{stamp.nominalNow}</b> — like everything did. That rise is inflation. <span class="soft">The shared tide.</span>
+          </p>
+          <p class="cap" data-in="0.15" data-out="0.235">
+            Drain the inflation back out and the stamp <b>barely moved.</b> <span class="soft">It didn't get pricier — your dollar got smaller.</span>
+          </p>
+          <!-- handoff -->
+          <p class="cap lead" data-in="0.235" data-out="0.30">Now do it to <b>everything at once.</b></p>
+          <!-- beat 3 — the split + year-play -->
+          <p class="cap" data-in="0.30" data-out="0.385">
+            Every everyday price rides the same tide up. <b>Looks like one story.</b>
+          </p>
+          <p class="cap" data-in="0.385" data-out="0.46">
+            Play the years back and drain the inflation, and the one story <b>splits in two.</b>
+          </p>
+          <!-- beat 4 — abundance tour -->
+          <p class="cap" data-in="0.46" data-out="0.515" data-good="gas">
+            Gas swings with every crisis and boom — but in real terms a gallon costs <b>less</b> than it did in 1980.
+          </p>
+          <p class="cap" data-in="0.515" data-out="0.57" data-good="tv">
+            A television falls <b>off the bottom.</b> The same money buys vastly more TV.
+            <span class="note">Constant-quality: a 2024 4K set measured against a 1960 console.</span>
+          </p>
+          <p class="cap" data-in="0.57" data-out="0.62" data-good="clothing">
+            Clothing gets <b>quietly cheaper,</b> decade after decade.
+          </p>
+          <p class="cap" data-in="0.62" data-out="0.675" data-good="eggs">
+            Eggs are the noisy one — bird-flu spikes — but land <b>about where they began.</b>
+          </p>
+          <!-- beat 5 — the squeeze tour -->
+          <p class="cap" data-in="0.675" data-out="0.73" data-good="college">
+            College tuition <b>climbs, and keeps climbing</b> — up about 248% in real terms.
+          </p>
+          <p class="cap" data-in="0.73" data-out="0.785" data-good="healthcare">
+            Medical care never stops rising. Not a spike — <b>a slope that steepens.</b>
+          </p>
+          <p class="cap" data-in="0.785" data-out="0.835" data-good="rent">
+            Rent is the one you <b>can't opt out of.</b> It rises across the whole window.
+            <span class="note">CPI rent of a primary residence.</span>
+          </p>
+          <p class="cap" data-in="0.835" data-out="0.885" data-good="childcare">
+            Childcare arrives late, around 1990, and <b>climbs the fastest of all.</b>
+          </p>
+          <!-- beat 6 — the verdict -->
+          <p class="cap lead" data-in="0.885" data-out="1.001" data-final>
+            Nine everyday things, inflation stripped out. <b class="d">The things you can choose got cheaper.</b> <b class="u">The things you can't opt out of rose fastest.</b>
+          </p>
         </div>
       </div>
     </div>
-
-    <!-- ===== BEAT 7 + PICKER ===== -->
-    <section id="picker-root" class="stage-band">
-      <div class="picker-intro measure">
-        <p class="kicker">Now you try.</p>
-        <h2>You watched them split. You never saw exactly how far.</h2>
-        <p class="invite">
-          You watched all nine split apart. You never saw exactly how far. Pick a line to pin where it lands today.
-        </p>
-      </div>
-
-      <div class="chiprail" role="group" aria-label="Pick a good to guess">
-        {data.goods.map((good) => (
-          <button class="chip" type="button" data-good={good.id} style={`--hue:${good.hue}`}>
-            <span class="sw" aria-hidden="true"></span>
-            <span class="lbl">{good.label}</span>
-            <span class="check" aria-hidden="true"></span>
-          </button>
-        ))}
-      </div>
-
-      <div class="guess-holder gridground" hidden id="guess-holder">
-        <svg id="guess" class="chart" viewBox="0 0 1000 520" role="group"
-             aria-label="Drag the handle to guess where this good's real price lands today."></svg>
-        <p class="guess-prompt" id="guess-prompt"></p>
-        <p class="guess-reveal" id="guess-reveal" aria-live="polite"></p>
-      </div>
-
-      <div class="capstone-wrap">
-        <button id="capstone-btn" class="capstone-btn" type="button" hidden>See every guess together</button>
-        <div id="capstone" hidden></div>
-      </div>
-    </section>
   </main>
 
-  <footer class="pagefoot stage-band">
-    <span class="credit">Source: {data.meta.sourceCredit}</span>
-    <span class="foot">
+  <footer class="method measure">
+    <p class="verdict">The things you can choose got cheaper. The things you can't opt out of rose fastest.</p>
+    <p class="credit">Source: {data.meta.sourceCredit}</p>
+    <p class="foot">
       Real price = each item's CPI (or average price) divided by all-items CPI-U, rebased to 100 at 1980
       (childcare at 1991, its first full year). Deflator: {data.meta.deflatorLabel}.
-    </span>
+    </p>
   </footer>
 
   <script>
     import '../scripts/scroll.ts';
-    import '../scripts/picker.ts';
   </script>
 </Base>

@@ -3,10 +3,11 @@
 A personal scrollytelling data-piece for [dustincoledata.com](https://dustincoledata.com).
 Strip out inflation and everyday prices split: some goods got cheaper or held (TV,
 clothing, gas, a stamp, eggs) while essential services exploded (college, healthcare,
-rent, childcare). Scroll to watch nine things diverge on one real-price axis, then pick
-a line and guess where it lands today.
+rent, childcare). "Drain the Tide": nine things ride the inflation tide up together as
+one story, then the tide drains — playing each good's real 1980–2024 series — and they
+split blue-below / rose-above the 100 line on one real-price axis.
 
-Astro static · hand-authored SVG · GSAP ScrollTrigger · zero runtime compute.
+Astro static · hand-authored SVG · CSS sticky-stage scroll (measured, responsive) · zero runtime compute.
 Deployed standalone at `realprice.dustincoledata.com`.
 
 ## Develop
@@ -39,9 +40,9 @@ npm run og         # regenerate public/og/cover.png (resvg, browser-free)
 ```
 pipeline/src/   local fetch + compute (node --experimental-strip-types)
 src/data/       committed computed series (the build's data contract)
-src/lib/        chart geometry + types (shared: build, scroll, picker, OG)
-src/scripts/    client GSAP scroll + interactive picker
-src/components/ FanChart.astro (static prerender = no-JS / reduced-motion fallback)
+src/lib/        types.ts — the data contract (shared: build, page, scroll, OG)
+src/scripts/    scroll.ts — the "Drain the Tide" engine (CSS sticky + measured SVG, no GSAP)
+src/pages/      index.astro — hero + sticky stage + baked static-skyline no-JS/reduced-motion fallback
 scripts/og.ts   browser-free OG cover generator
 ```
 
