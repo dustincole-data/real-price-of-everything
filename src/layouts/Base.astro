@@ -29,5 +29,27 @@ const canonical = Astro.site?.href;
 </head>
 <body>
   <slot />
+
+  <!-- dustincoledata brand mark -->
+  <a class="dcd-mark" href="https://dustincoledata.com" target="_blank" rel="noopener"
+     aria-label="A Dustin Cole Data project">
+    <span class="dcd-mark-name">Dustin Cole</span><span class="dcd-mark-suffix">Data</span>
+  </a>
+  <style>
+    .dcd-mark{position:fixed;left:max(14px,env(safe-area-inset-left,0px));
+      bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:60;
+      display:inline-flex;align-items:baseline;gap:7px;padding:7px 12px;border-radius:999px;
+      background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+      border:1px solid rgba(22,24,29,.10);box-shadow:0 2px 10px rgba(16,18,24,.06);
+      text-decoration:none;line-height:1;opacity:.85;transition:opacity .2s ease,transform .2s ease;}
+    .dcd-mark:hover{opacity:1;transform:translateY(-1px);}
+    .dcd-mark:focus-visible{outline:2px solid #4A3AAB;outline-offset:2px;}
+    .dcd-mark-name{font-family:'Archivo',-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+      font-weight:600;font-size:13px;letter-spacing:-.01em;color:#16181D;}
+    .dcd-mark-suffix{font-family:ui-monospace,'Cascadia Code','Segoe UI Mono',Menlo,monospace;
+      font-weight:500;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#565C68;}
+    @media print{.dcd-mark{display:none;}}
+    @media (prefers-reduced-motion:reduce){.dcd-mark{transition:none;}}
+  </style>
 </body>
 </html>
