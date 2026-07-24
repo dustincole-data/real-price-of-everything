@@ -16,3 +16,6 @@ pipeline/raw/
 # agent + planning scratch (local only)
 .claude/
 .scratch/
+
+.vercel
+.env*
