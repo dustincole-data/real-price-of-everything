@@ -125,6 +125,9 @@ a { color: inherit; }
 /* ===== The Ranking — per-good gallery (issue 09) ===== */
 :root { --strip-h: clamp(88px, 13vw, 132px); }
 .ranking { position: relative; }
+/* no-JS: the capbox stack (beats 2–3) ends flush with the gallery below with zero gap;
+   give the handoff a section break like .method's, so the two don't visually run together. */
+:root:not([data-js-active]) .ranking { margin-top: var(--sp-8); padding-top: var(--sp-7); border-top: 1px solid var(--grid); }
 
 /* docked strip: slim sticky mini-staircase under the masthead */
 .strip {
@@ -135,7 +138,12 @@ a { color: inherit; }
   background: var(--paper); /* solid so an outgoing card can't ghost through the docked strip */
   border-bottom: 1px solid var(--grid);
 }
-.strip-tag { font-size: 0.7rem; color: var(--ink-faint); letter-spacing: 0; margin-bottom: 3px; }
+.strip-tag-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); margin-bottom: 3px; }
+.strip-tag { font-size: 0.7rem; color: var(--ink-faint); letter-spacing: 0; }
+.strip-active {
+  font-size: 0.72rem; font-weight: 600; color: var(--good, var(--ink));
+  opacity: 0; white-space: nowrap; transition: opacity 0.3s ease;
+}
 .strip-inner { position: relative; flex: 1 1 auto; min-height: 0; }
 .strip-svg { display: block; width: 100%; height: 100%; }
 .strip-svg .base { stroke: var(--baseline); stroke-width: 1; stroke-dasharray: 4 4; }
@@ -189,7 +197,7 @@ a { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   [data-rank-js] .rp-area { opacity: 0.14; transition: none; }
   [data-rank-js] .rp-dot { opacity: 1; transition: none; }
-  .strip-pin, .strip-band { transition: none; }
+  .strip-pin, .strip-band, .strip-active { transition: none; }
 }
 
 /* --- method footer --- */

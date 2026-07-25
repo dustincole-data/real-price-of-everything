@@ -88,8 +88,10 @@ const BLURBS: Record<string, { html: string; note?: string }> = {
   college: { html: 'College tuition <b>climbs, and keeps climbing</b> — up about 248% in real terms.' },
 };
 
-// weighted scroll length ∝ |real − 100|: TV & college get long cinematic descents,
-// the kept-pace middle (eggs, stamp) flicks past fast. Each card sticky-dwells at center for
+// weighted scroll length ∝ sqrt(|real − 100|): TV & college get long cinematic descents,
+// the kept-pace middle (eggs, stamp) flicks past fast. sqrt (not linear) so college's +248%
+// outlier doesn't flatten everyone else into the floor — TV's -100% still reads as a second
+// long descent instead of landing mid-pack with gas/rent. Each card sticky-dwells at center for
 // (panel − viewport); the floor keeps the card ≈ a viewport tall so it centers cleanly, then
 // deviation buys the extra dwell on top. Tune here (open item, decided on the anchor).
 const MAXDEV = Math.max(...rank.map((gd) => Math.abs(gd.realIndexToday - 100)));
@@ -103,7 +105,7 @@ const panelData = rank.map((gd) => {
     gd, emoji: EMOJI[gd.id], color: col(gd.pole), pct, baseY,
     d: lineD(pts), area: areaD(pts), end: pts[pts.length - 1],
     indexLabel: v < 10 ? v.toFixed(1) : String(Math.round(v)),
-    vh: Math.round(MINVH + (dev / MAXDEV) * (MAXVH - MINVH)),
+    vh: Math.round(MINVH + Math.sqrt(dev / MAXDEV) * (MAXVH - MINVH)),
     blurb: BLURBS[gd.id],
   };
 });
@@ -212,7 +214,10 @@ const panels = panelData;
            Bars scale full-bleed (preserveAspectRatio=none); the pin + spotlight are HTML
            overlays JS positions in px, so they stay crisp at any width. -->
       <div class="strip" id="strip">
-        <span class="strip-tag mono">real price · 1980 = 100</span>
+        <div class="strip-tag-row">
+          <span class="strip-tag mono">real price · 1980 = 100</span>
+          <span class="strip-active mono" id="stripActive" aria-hidden="true"></span>
+        </div>
         <div class="strip-inner" id="stripInner">
           <div class="strip-band" id="stripBand" aria-hidden="true"></div>
           <svg class="strip-svg" viewBox={`0 0 ${STW} ${STH}`} preserveAspectRatio="none" role="img"

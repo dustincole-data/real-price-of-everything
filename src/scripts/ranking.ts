@@ -12,9 +12,10 @@ const strip = document.getElementById('strip');
 const inner = document.getElementById('stripInner');
 const pin = document.getElementById('stripPin');
 const band = document.getElementById('stripBand');
+const activeLabel = document.getElementById('stripActive');
 const panels = Array.from(document.querySelectorAll<HTMLElement>('.rpanel'));
 
-if (strip && inner && pin && band && panels.length) {
+if (strip && inner && pin && band && activeLabel && panels.length) {
   document.documentElement.setAttribute('data-rank-js', '');
   const drawn = new WeakSet<Element>();
   let activeId: string | null = null;
@@ -36,6 +37,12 @@ if (strip && inner && pin && band && panels.length) {
     band!.style.left = `${(br.left - ir.left - 5).toFixed(1)}px`;
     band!.style.width = `${(br.width + 10).toFixed(1)}px`;
     band!.style.opacity = '1';
+    const panel = panels.find((p) => p.dataset.good === id);
+    const emoji = panel?.querySelector('.rp-emoji')?.textContent ?? '';
+    const name = panel?.querySelector('.rp-name')?.textContent ?? '';
+    activeLabel!.textContent = `${emoji} ${name}`.trim();
+    activeLabel!.style.setProperty('--good', good);
+    activeLabel!.style.opacity = '1';
   }
 
   function drawLine(panel: HTMLElement) {
