@@ -45,16 +45,8 @@ const SW = 1000, BAR = 1000 / ITEMS.length;
 
       <div class="hz-scroll" id="hzScroll">
         <div class="hz-stage" id="hzStage">
-          <div class="nine-grid hz-grid" id="hzGrid" aria-hidden="true"></div>
           <div class="hz-plotbox" aria-hidden="true">
-            {[0, 200, 300].map((v) => (
-              <>
-                <span class="hz-axis" style={`top:${(((AXIS_MAX - v) / AXIS_MAX) * 100).toFixed(3)}%`}></span>
-                <span class="hz-axislbl" style={`top:${(((AXIS_MAX - v) / AXIS_MAX) * 100).toFixed(3)}%`}>{v}</span>
-              </>
-            ))}
             <span class="hz-baseline"></span>
-            <span class="hz-axislbl" style={`top:${((BASE_Y / AXIS_MAX) * 100).toFixed(3)}%`}>100</span>
             <span class="nine-rulelbl hz-baselbl">kept pace with inflation</span>
           </div>
 
@@ -71,11 +63,9 @@ const SW = 1000, BAR = 1000 / ITEMS.length;
                 </div>
                 <div class="hz-plot">
                   {/* when the strip isn't panning each panel stands alone, so it carries its own
-                      copy of the shared axis rather than the stage-level one */}
-                  {[0, 100, 200, 300].map((v) => (
-                    <span class="hz-axis hz-axis-own" data-v={v}
-                          style={`top:${(((AXIS_MAX - v) / AXIS_MAX) * 100).toFixed(3)}%`}></span>
-                  ))}
+                      copy of the shared 100 line rather than the stage-level one */}
+                  <span class="hz-axis-own" data-v="100"
+                        style={`top:${(((AXIS_MAX - 100) / AXIS_MAX) * 100).toFixed(3)}%`}></span>
                   <svg class="hz-line" viewBox={`0 0 ${SW} ${AXIS_MAX}`} preserveAspectRatio="none" aria-hidden="true">
                     <path class="area" d={area} />
                     <path class="ln" d={p.d} />

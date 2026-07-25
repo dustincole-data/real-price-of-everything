@@ -8,13 +8,12 @@ import { ITEMS, sparkPath } from '../lib/items.ts';
 const section = document.getElementById('prism');
 const scroll = document.getElementById('prScroll');
 const stage = document.getElementById('prStage');
-const floor = document.getElementById('prFloor');
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const flat = location.search.includes('flat'); // escape hatch: force the authored gallery
 
-if (section && scroll && stage && floor && !reduced && !flat) init(section, scroll, stage, floor);
+if (section && scroll && stage && !reduced && !flat) init(section, scroll, stage);
 
-function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement, floor: HTMLElement) {
+function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
   const N = ITEMS.length;
   const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
   const specs = ITEMS.map((_, i) => document.getElementById(`prSpec${i}`) as HTMLElement);
@@ -83,7 +82,6 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement, flo
     if (Math.abs(tgt - cur) < 0.0002) cur = tgt;
 
     const { z: camZ, at } = dolly(cur);
-    floor.style.setProperty('--floor-y', `${((camZ * 0.07) % 26).toFixed(1)}px`);
 
     specs.forEach((s, i) => {
       const z = camZ - i * GAP;

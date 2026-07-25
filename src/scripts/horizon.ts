@@ -1,6 +1,6 @@
 // Variation 3 · HORIZON — the filmstrip.
-// Wide screens: vertical scroll pans the nine panels sideways, the graph-paper ground slides under
-// them, the active %-counts up and the docked mini-skyline pins the item you're on. Small screens
+// Wide screens: vertical scroll pans the nine panels sideways across bare paper, the active
+// % counts up and the docked mini-skyline pins the item you're on. Small screens
 // keep a real swipeable snap-carousel (CSS) and only borrow the pin tracking. Enhancement only:
 // without JS the panels stack and the authored gallery is fully readable.
 import { ITEMS } from '../lib/items.ts';
@@ -9,7 +9,6 @@ const root = document.getElementById('horizon');
 const scroll = document.getElementById('hzScroll');
 const stage = document.getElementById('hzStage');
 const track = document.getElementById('hzTrack');
-const grid = document.getElementById('hzGrid');
 const pin = document.getElementById('hzPin');
 const live = document.getElementById('hzLive');
 const rects = Array.from(document.querySelectorAll<SVGRectElement>('.hz-strip-svg rect'));
@@ -87,7 +86,6 @@ function pan(root: HTMLElement, scroll: HTMLElement, stage: HTMLElement, track: 
     cur += (to - cur) * (1 - Math.pow(0.87, dt / 16.7));
     if (Math.abs(to - cur) < 0.4) cur = to;
     track.style.transform = `translate3d(${-cur.toFixed(1)}px,0,0)`;
-    if (grid) grid.style.setProperty('--gx', `${(-cur * 0.35 % 26).toFixed(1)}px`);
 
     root.toggleAttribute('data-panning', tgt > 0.02);
     const i = Math.max(0, Math.min(N - 1, at));

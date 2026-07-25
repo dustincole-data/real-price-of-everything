@@ -45,28 +45,17 @@ a { color: inherit; }
 .masthead .title { font-weight: 600; color: var(--ink); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; }
 .masthead .src { font-family: var(--font-mono); font-size: 0.72rem; flex: none; }
 
-/* graph-paper measurement ground, restrained + fading at the margins */
-.gridground { position: relative; }
-.gridground::before {
-  content: ''; position: absolute; inset: -2% -3%;
-  z-index: var(--z-grid); pointer-events: none;
-  background-image:
-    linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 26px 26px, 26px 26px;
-  -webkit-mask-image: radial-gradient(130% 105% at 50% 44%, #000 55%, transparent 92%);
-  mask-image: radial-gradient(130% 105% at 50% 44%, #000 55%, transparent 92%);
-  opacity: 0.8;
-}
-
-/* --- svg mark roles (shared by the live #viz and the static #skyline) --- */
-.tick { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-faint); }
-.rule { stroke: var(--grid); stroke-width: 1; }
+/* --- svg mark roles (shared by the live #viz and the static #skyline) ---
+   No gridlines and no y-axis ticks: the only rule left is the dashed 100 line, and every bar is
+   labelled directly — the same readout the gallery below uses (name in Franklin, % in mono). */
 .base { stroke: var(--baseline); stroke-width: 1.25; stroke-dasharray: 4 4; }
 .baselbl { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-muted); }
 .emoji { text-anchor: middle; dominant-baseline: central; }
-.val { font-family: var(--font-mono); font-weight: 500; text-anchor: middle; }
-.glab { font-family: var(--font-mono); fill: var(--ink-muted); text-anchor: middle; }
+.val {
+  font-family: var(--font-mono); font-weight: 400; text-anchor: middle;
+  letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
+}
+.glab { font-weight: 600; fill: var(--ink); text-anchor: middle; letter-spacing: -0.02em; }
 /* paper halo keeps annotations legible where they cross the bars */
 .baselbl, .val, .glab { paint-order: stroke; stroke: var(--paper); stroke-width: 3px; stroke-linejoin: round; }
 .yearlbl { font-family: var(--font-mono); font-weight: 600; fill: var(--ink-faint); letter-spacing: -0.02em; }

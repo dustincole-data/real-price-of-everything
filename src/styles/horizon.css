@@ -2,7 +2,7 @@
    The skyline, exploded across nine screens. Every panel plots its item on the TOP CHART'S OWN
    y-scale (0–380, 100 = kept pace), so the dashed 100 line runs unbroken across the whole strip and
    each glass object sits exactly where that thing landed in 2024. Vertical scroll pans sideways on
-   a wide screen; a swipeable snap-carousel on a small one. Same paper, same grid, same type. */
+   a wide screen; a swipeable snap-carousel on a small one. Same paper, same type. */
 @import './nine.css';
 
 .horizon {
@@ -38,17 +38,11 @@
 /* ---- stage ---- */
 .hz-scroll { position: relative; }
 .hz-stage { position: relative; }
-.hz-grid { z-index: 0; background-position: var(--gx, 0px) 0, var(--gx, 0px) 0; }
 
 /* One axis for all nine, drawn once at stage level and sitting ABOVE the panels so it never breaks
-   between them: the same 0–380 scale, the same faint rules and the same dashed 100 as the top chart.
-   This is what makes nine screens read as one chart rather than nine thumbnails. */
+   between them: the same 0–380 scale and the same dashed 100 as the top chart. Unruled — the 100
+   line alone is what makes nine screens read as one chart rather than nine thumbnails. */
 .hz-plotbox { position: absolute; left: 0; right: 0; top: var(--band-top); bottom: var(--band-bot); z-index: 5; pointer-events: none; }
-.hz-axis { position: absolute; left: 0; right: 0; height: 1px; background: var(--grid); }
-.hz-axislbl {
-  position: absolute; left: clamp(0.5rem, 2vw, 1.5rem); transform: translateY(-0.62em);
-  font-family: var(--font-mono); font-size: 0.68rem; color: var(--ink-faint);
-}
 .hz-baseline { position: absolute; left: 0; right: 0; top: var(--base-y); height: 1px; background: repeating-linear-gradient(90deg, var(--rule) 0 5px, transparent 5px 11px); }
 .hz-baselbl { position: absolute; left: clamp(3rem, 6vw, 5rem); top: var(--base-y); transform: translateY(-1.35rem); }
 
@@ -98,14 +92,14 @@
 .horizon[data-hz-pan] .hz-panel { width: 100vw; min-height: 0; height: 100%; }
 .horizon:not([data-hz-pan]) .hz-hint { display: none; }
 
-/* not panning (stacked or swiped): the axis rides inside each panel instead of the stage, so every
-   trajectory is still read against the same 0–380 scale */
-.hz-axis-own { display: none; }
-.horizon:not([data-hz-pan]) .hz-plotbox { display: none; }
-.horizon:not([data-hz-pan]) .hz-axis-own { display: block; }
-.hz-axis-own[data-v='100'] {
+/* not panning (stacked or swiped): the 100 line rides inside each panel instead of the stage, so
+   every trajectory is still read against the same 0–380 scale */
+.hz-axis-own {
+  display: none; position: absolute; left: 0; right: 0; height: 1px;
   background: repeating-linear-gradient(90deg, var(--rule) 0 5px, transparent 5px 11px);
 }
+.horizon:not([data-hz-pan]) .hz-plotbox { display: none; }
+.horizon:not([data-hz-pan]) .hz-axis-own { display: block; }
 .hz-axis-own::after {
   content: attr(data-v); position: absolute; left: 0; transform: translateY(-0.62em);
   font-family: var(--font-mono); font-size: 0.66rem; color: var(--ink-faint);

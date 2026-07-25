@@ -1,7 +1,8 @@
 /* ===== The nine, shared light-ground language ==============================================
-   One site: the after-section keeps the top chart's paper, grid, type and baseline. Nothing goes
-   dark. Where the dark drafts used additive glow, this uses the light-ground equivalent — a tinted
-   halo + a real contact shadow — so a glass object reads as placed on paper, not pasted onto it.
+   One site: the after-section keeps the top chart's paper, type and baseline. Nothing goes dark,
+   and nothing is ruled — the dashed 100 line is the only line on the page. Where the dark drafts
+   used additive glow, this uses the light-ground equivalent — a tinted halo + a real contact
+   shadow — so a glass object reads as placed on paper, not pasted onto it.
    Both variations (prism, horizon) import this first and then differ only in axis + wayfinding. */
 
 .nine {
@@ -21,15 +22,6 @@
   border-top: 1px solid var(--grid);
   /* --ink-faint is 3.5:1 — fine for axis ticks, not for a line anyone has to read */
   font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-muted);
-}
-
-/* --- the measurement ground, continued from the top chart's graph paper --- */
-.nine-grid {
-  position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background-image:
-    linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 26px 26px, 26px 26px;
 }
 
 /* --- a glass specimen on paper: tinted halo + contact shadow, never a glow --- */

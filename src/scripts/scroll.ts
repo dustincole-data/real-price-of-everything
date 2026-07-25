@@ -75,10 +75,12 @@ function measure() {
   H = Math.max(220, box.clientHeight);
   viz!.setAttribute('viewBox', `0 0 ${W} ${H}`);
   narrow = W < 560;
-  PL = narrow ? 30 : 46;
-  PR = W - (narrow ? 14 : 22);
+  // no y-axis ticks any more — the plot runs nearly edge to edge, with headroom under the bars
+  // for the item names, which are now Franklin at gallery size rather than 11px mono
+  PL = narrow ? 14 : 16;
+  PR = W - (narrow ? 14 : 16);
   PT = Math.round(H * 0.09);
-  PB = H - (narrow ? 44 : 36);
+  PB = H - (narrow ? 50 : 46);
   PW = PR - PL;
 }
 const yFor = (v: number) => PB - (clamp(v, 0, DMAX) / DMAX) * (PB - PT);
@@ -90,15 +92,8 @@ const y100 = () => yFor(100);
 /* ---- build once ---- */
 let bars: Bar[] = [];
 let water: SVGElement, base: SVGElement, baselbl: SVGElement, yearlbl: SVGElement;
-let ticks: { v: number; l: SVGElement; t: SVGElement }[] = [];
 function build() {
   while (viz!.firstChild) viz!.removeChild(viz!.firstChild);
-  ticks = [];
-  for (const v of [0, 100, 200, 300]) {
-    const l = mk('line', { class: 'rule' });
-    const t = mk('text', { class: 'tick', 'text-anchor': 'end' }, String(v));
-    viz!.appendChild(l); viz!.appendChild(t); ticks.push({ v, l, t });
-  }
   water = mk('rect', { class: 'tide', fill: 'var(--tide)', 'fill-opacity': 0 }); viz!.appendChild(water);
   base = mk('line', { class: 'base' }); viz!.appendChild(base);
   baselbl = mk('text', { class: 'baselbl' }, 'kept pace with inflation'); viz!.appendChild(baselbl);
@@ -114,12 +109,6 @@ function build() {
   layout();
 }
 function layout() {
-  for (const o of ticks) {
-    const y = yFor(o.v);
-    o.l.setAttribute('x1', String(PL)); o.l.setAttribute('y1', String(y));
-    o.l.setAttribute('x2', String(PR)); o.l.setAttribute('y2', String(y));
-    o.t.setAttribute('x', String(PL - 7)); o.t.setAttribute('y', String(y + 3.5));
-  }
   base.setAttribute('x1', String(PL)); base.setAttribute('y1', String(y100()));
   base.setAttribute('x2', String(PR)); base.setAttribute('y2', String(y100()));
   baselbl.setAttribute('x', String(PL)); baselbl.setAttribute('y', String(y100() - 6));
@@ -133,9 +122,11 @@ function layout() {
     const x = xFor(i);
     b.rect.setAttribute('x', String(x - bw / 2)); b.rect.setAttribute('width', String(bw));
     b.em.setAttribute('x', String(x)); b.em.setAttribute('font-size', String(narrow ? 26 : 22));
-    b.val.setAttribute('x', String(x)); b.val.setAttribute('font-size', String(narrow ? 15 : 13));
-    b.lab.setAttribute('x', String(x)); b.lab.setAttribute('font-size', String(narrow ? 12 : 11));
-    b.lab.setAttribute('y', String(PB + (narrow ? 15 : 19)));
+    // narrow keeps the readout small: nine slots across a phone leaves ~40px each, and a
+    // gallery-sized "+248%" would run straight through its neighbours
+    b.val.setAttribute('x', String(x)); b.val.setAttribute('font-size', String(narrow ? 15 : 18));
+    b.lab.setAttribute('x', String(x)); b.lab.setAttribute('font-size', '14');
+    b.lab.setAttribute('y', String(PB + (narrow ? 20 : 22)));
   });
 }
 
@@ -185,16 +176,18 @@ function renderBars(p: number) {
     const y = yFor(v);
     b.rect.setAttribute('y', String(y)); b.rect.setAttribute('height', String(Math.max(0, PB - y)));
     b.rect.setAttribute('opacity', o.toFixed(3));
-    b.em.setAttribute('y', String(y - (narrow ? 18 : 16))); b.em.setAttribute('opacity', o.toFixed(3));
+    b.em.setAttribute('y', String(y - 18)); b.em.setAttribute('opacity', o.toFixed(3));
     // wide: label the whole axis (names fit); narrow: only the active bar, so long names never collide
     b.lab.setAttribute('opacity', narrow ? (hi === b.id ? o.toFixed(3) : '0') : (appear * labReveal * (dim ? 0.35 : 1)).toFixed(3));
 
-    // value readout: the teach stamp shows cents; after the handoff the live index rides every bar
+    // value readout: the teach stamp shows cents; after the handoff every bar carries its live
+    // distance from the 100 line as a percentage — with the axis ticks gone the number has to say
+    // what it means on its own, and it's the same readout the gallery below lands on.
     let txt: string | null = null;
     if (isStamp && p < 0.235) txt = tDrain > 0.5 ? 'real ≈ 12¢' : (tRise > 0.4 ? '68¢' : '15¢');
-    else if (p >= 0.30) txt = String(Math.round(v));
+    else if (p >= 0.30) { const d = Math.round(v - 100); txt = `${d >= 0 ? '+' : '−'}${Math.abs(d)}%`; }
     if (txt) {
-      b.val.setAttribute('y', String(y - (narrow ? 40 : 34)));
+      b.val.setAttribute('y', String(y - (narrow ? 40 : 42)));
       b.val.textContent = txt;
       b.val.setAttribute('opacity', o.toFixed(3));
     } else {

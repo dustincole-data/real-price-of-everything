@@ -1,8 +1,8 @@
 /* ===== Variation 1 · PRISM — the specimen hall =============================================
-   A white hall you fly down. Nine glass specimens hang on dashed stems off the same 100 line the
-   top chart draws, goods below it and services above, so the walk literally climbs. The graph-paper
-   floor slides underneath and dissolves into paper at the far end — aerial perspective instead of
-   the dark draft's bloom. CSS 3D, not WebGL: nothing here needs a glow pass. */
+   A white hall you fly down. Nine glass specimens hang off the same 100 line the top chart draws,
+   goods below it and services above, so the walk literally climbs. Bare paper underfoot — depth
+   comes from perspective and from specimens fading into the paper at the far end, aerial
+   perspective instead of the dark draft's bloom. CSS 3D, not WebGL: nothing here needs a glow. */
 @import './nine.css';
 
 .prism { --gap: 900px; --hall-lift: 210px; --eye: 46%; --obj: min(30vmin, 320px); --xspread: 1; }
@@ -16,20 +16,6 @@
 
 /* ---- the hall ---- */
 .pr-hall { position: absolute; inset: 0; transform-style: preserve-3d; }
-
-/* the measurement ground — the top chart's own graph paper and radial mask, drifting slowly as
-   you fly (a true 3D floor plane foreshortens its 1px lines into a solid grey wedge) */
-.pr-floor {
-  position: absolute; inset: -4%;
-  background-image:
-    linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 26px 26px, 26px 26px;
-  background-position: 0 var(--floor-y, 0px), 0 var(--floor-y, 0px);
-  -webkit-mask-image: radial-gradient(86% 74% at 50% var(--eye), #000 38%, transparent 92%);
-  mask-image: radial-gradient(86% 74% at 50% var(--eye), #000 38%, transparent 92%);
-  opacity: 0.85;
-}
 
 /* the 100 line: the same dashed rule the top chart draws, at eye level. A line lying at eye height
    in a 3D hall projects to exactly this anyway, so it's drawn flat — crisper, and no oversized
