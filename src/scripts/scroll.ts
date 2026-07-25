@@ -123,6 +123,8 @@ function layout() {
   base.setAttribute('x1', String(PL)); base.setAttribute('y1', String(y100()));
   base.setAttribute('x2', String(PR)); base.setAttribute('y2', String(y100()));
   baselbl.setAttribute('x', String(PL)); baselbl.setAttribute('y', String(y100() - 6));
+  baselbl.textContent = narrow ? 'kept pace' : 'kept pace with inflation';
+  baselbl.setAttribute('font-size', narrow ? '12' : '11');
   yearlbl.setAttribute('x', String(PR)); yearlbl.setAttribute('y', String(PT + 4));
   yearlbl.setAttribute('font-size', String(narrow ? 22 : 30));
   water.setAttribute('x', String(PL)); water.setAttribute('width', String(PW));
@@ -130,9 +132,9 @@ function layout() {
   bars.forEach((b, i) => {
     const x = xFor(i);
     b.rect.setAttribute('x', String(x - bw / 2)); b.rect.setAttribute('width', String(bw));
-    b.em.setAttribute('x', String(x)); b.em.setAttribute('font-size', String(narrow ? 15 : 20));
-    b.val.setAttribute('x', String(x)); b.val.setAttribute('font-size', String(narrow ? 10 : 12));
-    b.lab.setAttribute('x', String(x)); b.lab.setAttribute('font-size', String(narrow ? 9 : 11));
+    b.em.setAttribute('x', String(x)); b.em.setAttribute('font-size', String(narrow ? 26 : 22));
+    b.val.setAttribute('x', String(x)); b.val.setAttribute('font-size', String(narrow ? 15 : 13));
+    b.lab.setAttribute('x', String(x)); b.lab.setAttribute('font-size', String(narrow ? 12 : 11));
     b.lab.setAttribute('y', String(PB + (narrow ? 15 : 19)));
   });
 }
@@ -145,7 +147,7 @@ const STAMP_I = ORDER.indexOf('stamp');
 function renderBars(p: number) {
   const tRise = ss(p, 0.02, 0.11), tDrain = ss(p, 0.115, 0.215), hand = ss(p, 0.22, 0.30);
   const aRise = ss(p, 0.30, 0.385), aDrain = ss(p, 0.385, 0.47);
-  const hi = activeGood(p), frame = p >= 0.885;
+  const hi = activeGood(p);
 
   // water = the inflation tide, draining twice (teach, then split)
   let wl: number, wfade: number;
@@ -183,19 +185,16 @@ function renderBars(p: number) {
     const y = yFor(v);
     b.rect.setAttribute('y', String(y)); b.rect.setAttribute('height', String(Math.max(0, PB - y)));
     b.rect.setAttribute('opacity', o.toFixed(3));
-    b.em.setAttribute('y', String(y - (narrow ? 11 : 14))); b.em.setAttribute('opacity', o.toFixed(3));
+    b.em.setAttribute('y', String(y - (narrow ? 18 : 16))); b.em.setAttribute('opacity', o.toFixed(3));
     // wide: label the whole axis (names fit); narrow: only the active bar, so long names never collide
     b.lab.setAttribute('opacity', narrow ? (hi === b.id ? o.toFixed(3) : '0') : (appear * labReveal * (dim ? 0.35 : 1)).toFixed(3));
 
-    // value label: cents during the teach, then ± real % on the active/verdict bars
+    // value readout: the teach stamp shows cents; after the handoff the live index rides every bar
     let txt: string | null = null;
     if (isStamp && p < 0.235) txt = tDrain > 0.5 ? 'real ≈ 12¢' : (tRise > 0.4 ? '68¢' : '15¢');
-    else if (hi === b.id || (frame && (b.id === 'college' || b.id === 'tv'))) {
-      const pct = Math.round(b.end - 100);
-      txt = (pct >= 0 ? '+' : '−') + Math.abs(pct) + '%';
-    }
+    else if (p >= 0.30) txt = String(Math.round(v));
     if (txt) {
-      b.val.setAttribute('y', String(y - (narrow ? 25 : 30)));
+      b.val.setAttribute('y', String(y - (narrow ? 40 : 34)));
       b.val.textContent = txt;
       b.val.setAttribute('opacity', o.toFixed(3));
     } else {
@@ -226,15 +225,19 @@ function computeProgress(): number {
   return clamp(-r.top / (total || 1));
 }
 function frame() {
-  curP += (tgtP - curP) * 0.18;
-  if (Math.abs(tgtP - curP) < 0.0005) curP = tgtP;
+  // reduced-motion: snap straight to the scroll position (no motion independent of the finger);
+  // otherwise ease toward the target so scrubbing stays smooth.
+  curP += reduced ? (tgtP - curP) : (tgtP - curP) * 0.18;
+  if (reduced || Math.abs(tgtP - curP) < 0.0005) curP = tgtP;
   render(curP);
   if (curP !== tgtP) requestAnimationFrame(frame); else ticking = false;
 }
 function onScroll() { tgtP = computeProgress(); if (!ticking) { ticking = true; requestAnimationFrame(frame); } }
 
 function init() {
-  if (reduced) return; // static skyline + stacked captions (index.astro fallback) carry it
+  // Note: reduced-motion still runs the scrollytelling — the scroll-coupled chart IS the content,
+  // not decoration. frame() drops the eased smoothing under reduced so nothing moves on its own.
+  // The static skyline + stacked captions only carry it when JS never runs at all.
   root.setAttribute('data-js-active', '');
   measure(); build();
   tgtP = curP = computeProgress(); render(curP);
@@ -247,4 +250,4 @@ function init() {
 }
 
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(init); else window.addEventListener('load', init);
-setTimeout(() => { if (!W && !reduced) init(); }, 700); // failsafe if fonts never resolve
+setTimeout(() => { if (!W) init(); }, 700); // failsafe if fonts never resolve
