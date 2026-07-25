@@ -26,9 +26,12 @@
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
 }
+/* the chip's paper knockout is opaque, and the rule is 1px tall — so any vertical overlap erases
+   the dashes for the chip's full width. Sit it fully clear of the line rather than on it: at 390
+   the chip reaches past where the rule's mask turns opaque, so a 1px touch cost 129px of dashes. */
 .pr-rulelbl {
   position: absolute; left: clamp(1rem, 4vw, 3.5rem); top: var(--eye);
-  transform: translateY(-1.15rem); z-index: 3;
+  transform: translateY(calc(-100% - 3px)); z-index: 3;
 }
 
 /* ---- a specimen ----
