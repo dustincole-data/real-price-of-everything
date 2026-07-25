@@ -1,6 +1,8 @@
 // Shared 9-item model for the "after" variations. Ranked best real deal → worst (ascending
-// real-2024 index). Spectral-by-rank hue (cool = cheapest today, warm = priciest). Derived from
-// series.json so every number traces to the same source as the top chart.
+// real-2024 index). Colour is diverging *within the top chart's own two poles* — goods/held run
+// cool, services run warm — so the gallery speaks the same language as the drain-the-tide chart
+// instead of inventing a nine-hue rainbow. Derived from series.json so every number traces to the
+// same source as the top chart.
 import seriesData from '../data/series.json';
 import type { SeriesData } from './types.ts';
 
@@ -28,47 +30,70 @@ const BLURB: Record<string, string> = {
 };
 
 const ranked = [...data.goods].sort((a, b) => a.realIndexToday - b.realIndexToday);
-const N = ranked.length;
-export const hueFor = (i: number) => 240 - (i / (N - 1)) * 226; // 240 cool → 14 warm
-
-// OKLCH → sRGB hex (WebGL/Canvas want a number; CSS keeps the oklch() string).
-export function oklchToHex(L: number, C: number, Hdeg: number): number {
-  const h = (Hdeg * Math.PI) / 180;
-  const a = C * Math.cos(h), b = C * Math.sin(h);
-  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
-  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
-  const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
-  const l = l_ ** 3, m = m_ ** 3, s = s_ ** 3;
-  let r = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
-  let g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
-  let bl = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
-  const enc = (c: number) => {
-    c = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(Math.max(0, c), 1 / 2.4) - 0.055;
-    return Math.max(0, Math.min(255, Math.round(c * 255)));
-  };
-  return (enc(r) << 16) | (enc(g) << 8) | enc(bl);
-}
+const downs = ranked.filter((g) => g.pole === 'down');
+const ups = ranked.filter((g) => g.pole === 'up');
+const dev = (g: Good) => g.realIndexToday - 100;
+// two normalisers, deliberately different:
+//   mag  — per pole, so BOTH extremes (a TV at −100%, tuition at +248%) read as fully saturated
+//   lift — across all nine, signed, so vertical position stays literally true to the 100 baseline
+const maxOf = (gs: Good[]) => Math.max(...gs.map((g) => Math.abs(dev(g))));
+const maxDown = maxOf(downs), maxUp = maxOf(ups), maxAll = Math.max(maxDown, maxUp);
 
 export interface Item {
   id: string; label: string; emoji: string; head: string; blurb: string;
-  idx: number; pct: number; real: (number | null)[]; hue: number;
-  color: string; colorDim: string; rgb: number; rise: boolean;
+  idx: number; pct: number; real: (number | null)[]; pole: 'up' | 'down';
+  hue: number; mag: number; lift: number;
+  color: string; colorInk: string; colorDark: string; rise: boolean;
 }
 
-export const ITEMS: Item[] = ranked.map((g, i) => {
-  const h = hueFor(i);
+export const ITEMS: Item[] = ranked.map((g) => {
+  const cool = g.pole === 'down';
+  const sameSide = cool ? downs : ups;
+  const k = sameSide.indexOf(g) / (sameSide.length - 1);            // rank within its own pole
+  const mag = Math.sqrt(Math.abs(dev(g)) / (cool ? maxDown : maxUp));
+  // hues stay inside the top chart's two poles (blue 240, rose 18) — a nine-hue rainbow would
+  // contradict the chart it hands off from
+  const hue = cool ? 248 - 42 * k : 34 - 22 * k;                     // blue→teal · rust→crimson
+  const h = hue.toFixed(1);
+  const L = 0.645 - 0.135 * mag, C = 0.075 + 0.115 * mag;            // farther from 100 = deeper
   return {
     id: g.id, label: g.label, emoji: EMOJI[g.id], head: HEAD[g.id], blurb: BLURB[g.id],
-    idx: g.realIndexToday, pct: Math.round(g.realIndexToday - 100), real: g.real, hue: h,
-    color: `oklch(0.72 0.18 ${h.toFixed(1)})`,
-    colorDim: `oklch(0.5 0.12 ${h.toFixed(1)})`,
-    rgb: oklchToHex(0.72, 0.18, h),
-    rise: g.realIndexToday >= 100,
+    idx: g.realIndexToday, pct: Math.round(dev(g)), real: g.real, pole: g.pole,
+    hue, mag,
+    lift: Math.sign(dev(g)) * Math.sqrt(Math.abs(dev(g)) / maxAll),
+    color: `oklch(${L.toFixed(3)} ${C.toFixed(3)} ${h})`,            // large marks on paper (≥3:1)
+    colorInk: `oklch(${(Math.min(L, 0.48) - 0.02 * mag).toFixed(3)} ${(C * 0.92).toFixed(3)} ${h})`,
+    colorDark: `oklch(0.72 0.18 ${h})`,                              // dark-ground pages (strata)
+    rise: dev(g) >= 0,
   };
 });
 export const YEARS: number[] = data.meta.years;
 export const SOURCE = data.meta.sourceCredit;
 export const DEFLATOR = data.meta.deflatorLabel;
+
+// The top chart's own y-scale: real index 0→380, 100 = kept pace with inflation. HORIZON draws all
+// nine trajectories on it so panning sideways reads as one panorama rather than nine rescaled
+// thumbnails — the same axis the skyline uses, spread across nine screens.
+export const AXIS_MAX = 380;
+export function axisPath(real: (number | null)[], x0 = 400, x1 = 880) {
+  const n = real.length;
+  const X = (i: number) => x0 + (i / (n - 1)) * (x1 - x0);
+  const Y = (v: number) => AXIS_MAX - Math.max(0, Math.min(AXIS_MAX, v));
+  let d = '', started = false;
+  real.forEach((v, i) => {
+    if (v == null) return;
+    d += (started ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1);
+    started = true;
+  });
+  const last = real.map((v, i) => (v == null ? null : i)).filter((i) => i != null).pop() as number;
+  const first = real.findIndex((v) => v != null);
+  return {
+    d, x0: X(first), x1: X(last), endX: X(last), endY: Y(real[last] as number),
+    baseY: Y(100), startYear: 1980 + first,
+    // fraction of the plot box the 2024 endpoint sits at — where its glass object goes
+    endYFrac: Y(real[last] as number) / AXIS_MAX,
+  };
+}
 
 // A small sparkline path for an item's real 1980→2024 series, framed tight to its own range
 // with the 100 baseline marked. Shared by the WebGL HUD and the no-JS fallback so they match.

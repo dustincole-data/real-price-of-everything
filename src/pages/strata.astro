@@ -15,7 +15,7 @@ const chapters = ITEMS.map((it, i) => ({ it, i, spark: sparkPath(it.real, 180, 5
         <h2>Same lens. <em>Nine verdicts.</em></h2>
       </div>
       {chapters.map(({ it, i, spark }) => (
-        <article class="st-ch" data-i={i} style={`--good:${it.color}`}>
+        <article class="st-ch" data-i={i} style={`--good:${it.colorDark}`}>
           <div class="st-orb" aria-hidden="true"></div>
           <figure class="st-fig"><img src={`/obj/${it.id}.png`} alt={`A glowing crystalline ${it.label}`} width="1024" height="1024" loading="lazy" /></figure>
           <div class="st-txt">

@@ -5,48 +5,88 @@ import Footer from '../components/Footer.astro';
 import { ITEMS, sparkPath } from '../lib/items.ts';
 import '../styles/prism.css';
 
-const fallback = ITEMS.map((it) => ({ it, spark: sparkPath(it.real) }));
+const nine = ITEMS.map((it, i) => ({ it, i, spark: sparkPath(it.real, 168, 52) }));
+const first = nine[0];
 ---
 <Base>
   <TopStory>
-    <section class="prism" id="prism" aria-label="Nine everyday things, one at a time — best real deal today to worst.">
-      <div class="prism-intro">
-        <p class="eyebrow">The nine, one by one</p>
-        <h2>Same lens, nine verdicts.</h2>
-        <p>Below the tide, each thing waits as a single crystal — lit by what really happened to its price. Scroll down through them, from the best real bargain today to the one that ran away.</p>
+    <section class="nine prism" id="prism">
+      <div class="nine-intro measure">
+        <h2>Nine things, one at a time.</h2>
+        <p class="lede">
+          Same lens, nine verdicts. Walk the hall from the best real bargain today to the one that
+          ran away.
+        </p>
+        <p class="meta">
+          nine specimens · 1980&ndash;2024 · hung off the same line: above it beat inflation's pace,
+          below it didn't
+        </p>
       </div>
 
-      <div class="prism-scroll" id="prismScroll">
-        <div class="prism-stage" id="prismStage">
-          <canvas id="prismCanvas"></canvas>
-          <div class="prism-hud" aria-hidden="true">
-            <div class="ph-body" id="phBody">
-              <div class="ph-name"><span class="n" id="phName"></span><span class="ph-rank" id="phRank"></span></div>
-              <div class="ph-pct" id="phPct"></div>
-              <div class="ph-head" id="phHead"></div>
-              <p class="ph-blurb" id="phBlurb"></p>
-              <svg class="ph-spark" id="phSpark" viewBox="0 0 150 46" preserveAspectRatio="xMidYMid meet"></svg>
-            </div>
-            <div class="ph-nav" id="phNav"></div>
+      <div class="pr-scroll" id="prScroll">
+        <div class="pr-stage" id="prStage">
+          <div class="pr-hall" id="prHall" aria-hidden="true">
+            <div class="pr-floor" id="prFloor"></div>
+            <div class="pr-rule" id="prRule"></div>
+            {nine.map(({ it, i }) => (
+              <div class="pr-spec" id={`prSpec${i}`} data-i={i} data-far
+                   style={`--good:${it.color}; --lift:${it.lift.toFixed(3)}; --xk:${12 + (i % 2) * 26}`}>
+                <figure class="nine-obj">
+                  {/* eager: a lazy image inside a visibility:hidden specimen never loads, then pops
+                      in as you fly up to it */}
+                  <img src={`/obj-light/${it.id}.webp`} srcset={`/obj-light/${it.id}-640.webp 640w, /obj-light/${it.id}.webp 1024w`}
+                       sizes="(max-width: 860px) 50vw, 24vw" alt="" width="1024" height="1024"
+                       decoding="async" fetchpriority={i < 2 ? 'high' : 'low'} />
+                </figure>
+              </div>
+            ))}
           </div>
-          <div class="prism-scrollhint">scroll</div>
+
+          <span class="nine-rulelbl pr-rulelbl" aria-hidden="true">kept pace with inflation</span>
+
+          <div class="pr-hud is-on" id="prHud" style={`--good:${first.it.color}; --good-ink:${first.it.colorInk}`}>
+            <p class="nine-rank"><span id="prRank">01</span> / 09 · real price today</p>
+            <p class="nine-name" id="prName">{first.it.label}</p>
+            <p class="nine-pct" id="prPct">{first.it.pct >= 0 ? '+' : '−'}{Math.abs(first.it.pct)}%</p>
+            <p class="nine-head" id="prHead">{first.it.head}</p>
+            <p class="nine-blurb" id="prBlurb">{first.it.blurb}</p>
+            <svg class="nine-spark" id="prSpark" viewBox="0 0 168 52" aria-hidden="true">
+              <line class="base" x1="0" y1={first.spark.baseY} x2="168" y2={first.spark.baseY} />
+              <path class="ln" d={first.spark.d} />
+              <circle class="dot" cx={first.spark.endX} cy={first.spark.endY} r="2.8" />
+            </svg>
+          </div>
+
+          <p class="pr-railtag" aria-hidden="true">100</p>
+          <ol class="pr-rail" id="prRail" aria-hidden="true">
+            {nine.map(({ it, i }) => (
+              <li data-i={i} data-side={it.rise ? 'up' : 'down'}
+                  style={`--good:${it.color}; --w:${Math.abs(it.lift).toFixed(3)}`}><i></i></li>
+            ))}
+          </ol>
+
+          <p class="pr-hint" aria-hidden="true">scroll ↓</p>
         </div>
       </div>
 
-      <!-- no-JS / reduced-motion / no-WebGL: the same nine, as a static crystalline gallery -->
-      <ol class="prism-fallback">
-        {fallback.map(({ it, spark }, i) => (
-          <li style={`--good:${it.color}`}>
-            <figure class="pf-fig"><img src={`/obj/${it.id}.png`} alt={`A glowing crystalline ${it.label}`} width="1024" height="1024" loading="lazy" /></figure>
-            <div class="pf-txt">
-              <div class="ph-rank">{String(i + 1).padStart(2, '0')} · real price today</div>
-              <div class="pf-head">{it.label}</div>
-              <div class="pf-pct">{it.pct >= 0 ? '+' : '−'}{Math.abs(it.pct)}%</div>
-              <p class="pf-blurb">{it.blurb}</p>
-              <svg class="ph-spark" viewBox={`0 0 ${spark.W} ${spark.H}`} aria-hidden="true">
+      <ol class="nine-static">
+        {nine.map(({ it, i, spark }) => (
+          <li style={`--good:${it.color}; --good-ink:${it.colorInk}`}>
+            <figure class="nine-obj">
+              <img src={`/obj-light/${it.id}.webp`} srcset={`/obj-light/${it.id}-640.webp 640w, /obj-light/${it.id}.webp 1024w`}
+                   sizes="(max-width: 719px) 62vw, 28vw"
+                   alt={`${it.label}, as a glass specimen`} width="1024" height="1024" loading="lazy" decoding="async" />
+            </figure>
+            <div>
+              <p class="nine-rank">{String(i + 1).padStart(2, '0')} / 09 · real price today</p>
+              <p class="nine-name">{it.label}</p>
+              <p class="nine-pct">{it.pct >= 0 ? '+' : '−'}{Math.abs(it.pct)}%</p>
+              <p class="nine-head">{it.head}</p>
+              <p class="nine-blurb">{it.blurb}</p>
+              <svg class="nine-spark" viewBox={`0 0 ${spark.W} ${spark.H}`} aria-hidden="true">
                 <line class="base" x1="0" y1={spark.baseY} x2={spark.W} y2={spark.baseY} />
                 <path class="ln" d={spark.d} />
-                <circle class="dot" cx={spark.endX} cy={spark.endY} r="2.6" />
+                <circle class="dot" cx={spark.endX} cy={spark.endY} r="2.8" />
               </svg>
             </div>
           </li>

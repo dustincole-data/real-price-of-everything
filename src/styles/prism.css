@@ -1,86 +1,130 @@
-/* ===== Variation 1 · PRISM — the crystalline vault (dark WebGL museum of the 9 items) ===== */
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap');
+/* ===== Variation 1 · PRISM — the specimen hall =============================================
+   A white hall you fly down. Nine glass specimens hang on dashed stems off the same 100 line the
+   top chart draws, goods below it and services above, so the walk literally climbs. The graph-paper
+   floor slides underneath and dissolves into paper at the far end — aerial perspective instead of
+   the dark draft's bloom. CSS 3D, not WebGL: nothing here needs a glow pass. */
+@import './nine.css';
 
-.prism {
-  --void: oklch(0.13 0.024 264);
-  --void-2: oklch(0.17 0.03 264);
-  --lite: oklch(0.97 0.008 264);
-  --muted: oklch(0.74 0.02 264);
-  --faint: oklch(0.58 0.02 264);
-  --hair: oklch(0.32 0.02 264);
-  --disp: 'Syne', system-ui, sans-serif;
-  position: relative;
-  background: var(--void);
-  color: var(--lite);
-  isolation: isolate;
+.prism { --gap: 900px; --hall-lift: 210px; --eye: 46%; --obj: min(30vmin, 320px); --xspread: 1; }
+
+.pr-scroll { position: relative; }
+.pr-stage {
+  position: sticky; top: var(--mast); height: calc(100dvh - var(--mast));
+  overflow: clip; isolation: isolate;
+  perspective: 1100px; perspective-origin: 50% var(--eye);
 }
-/* fade in from the light page above and back out to the light footer below */
-.prism::before,
-.prism::after {
-  content: ''; position: absolute; left: 0; right: 0; height: 22vh; z-index: 3; pointer-events: none;
+
+/* ---- the hall ---- */
+.pr-hall { position: absolute; inset: 0; transform-style: preserve-3d; }
+
+/* the measurement ground — the top chart's own graph paper and radial mask, drifting slowly as
+   you fly (a true 3D floor plane foreshortens its 1px lines into a solid grey wedge) */
+.pr-floor {
+  position: absolute; inset: -4%;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 26px 26px, 26px 26px;
+  background-position: 0 var(--floor-y, 0px), 0 var(--floor-y, 0px);
+  -webkit-mask-image: radial-gradient(86% 74% at 50% var(--eye), #000 38%, transparent 92%);
+  mask-image: radial-gradient(86% 74% at 50% var(--eye), #000 38%, transparent 92%);
+  opacity: 0.85;
 }
-.prism::before { top: 0; background: linear-gradient(var(--paper), transparent); }
-.prism::after { bottom: 0; background: linear-gradient(transparent, var(--paper)); }
 
-/* dark intro band that sets the scene before the sticky stage */
-.prism-intro { position: relative; z-index: 4; text-align: center; padding: clamp(5rem, 16vh, 9rem) 1.25rem clamp(2rem, 6vh, 4rem); }
-.prism-intro .eyebrow { font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.08em; color: var(--faint); text-transform: uppercase; }
-.prism-intro h2 { font-family: var(--disp); font-weight: 800; font-size: clamp(2rem, 1.4rem + 3vw, 3.6rem); letter-spacing: -0.03em; margin: 0.6rem auto 0; max-width: 18ch; line-height: 1.04; }
-.prism-intro p { color: var(--muted); max-width: 46ch; margin: 1rem auto 0; font-size: 1.05rem; line-height: 1.55; }
-
-/* the scroll driver + sticky stage */
-.prism-scroll { position: relative; }
-.prism-stage { position: sticky; top: 0; height: 100dvh; overflow: clip; }
-#prismCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; }
-
-/* HUD overlay — the active item's story, synced to scroll */
-.prism-hud { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
-.ph-body {
-  position: absolute; left: clamp(1.25rem, 5vw, 5rem); bottom: clamp(1.5rem, 7vh, 5rem);
-  width: min(30rem, 82vw); opacity: 0; transform: translateY(14px);
+/* the 100 line: the same dashed rule the top chart draws, at eye level. A line lying at eye height
+   in a 3D hall projects to exactly this anyway, so it's drawn flat — crisper, and no oversized
+   layer to rasterise. */
+.pr-rule {
+  position: absolute; left: 0; right: 0; top: var(--eye); height: 1px;
+  background: repeating-linear-gradient(90deg, var(--rule) 0 6px, transparent 6px 13px);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
 }
-.ph-body.is-on { opacity: 1; transform: none; transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1); }
-.ph-name { display: flex; align-items: baseline; gap: 0.6rem; font-family: var(--disp); font-weight: 700; }
-.ph-name .n { font-size: clamp(1.6rem, 1.2rem + 2vw, 2.6rem); letter-spacing: -0.02em; color: var(--good, var(--lite)); }
-.ph-rank { font-family: var(--font-mono); font-size: 0.78rem; color: var(--faint); letter-spacing: 0.02em; }
-.ph-pct { font-family: var(--font-mono); font-weight: 500; font-size: clamp(3rem, 2rem + 6vw, 5.6rem); line-height: 0.95; letter-spacing: -0.04em; color: var(--good, var(--lite)); margin: 0.4rem 0 0.1rem; text-shadow: 0 0 40px color-mix(in oklch, var(--good) 55%, transparent); }
-.ph-head { font-family: var(--disp); font-weight: 600; font-size: 1.15rem; color: var(--lite); letter-spacing: -0.01em; }
-.ph-blurb { color: var(--muted); font-size: 1rem; line-height: 1.55; margin-top: 0.5rem; max-width: 40ch; }
-.ph-spark { margin-top: 1rem; width: 168px; height: 52px; display: block; overflow: visible; }
-.ph-spark .base { stroke: var(--hair); stroke-width: 1; stroke-dasharray: 3 4; }
-.ph-spark .ln { fill: none; stroke: var(--good, var(--lite)); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 6px color-mix(in oklch, var(--good) 70%, transparent)); }
-.ph-spark .dot { fill: var(--good, var(--lite)); }
-.ph-spark .lbl { font-family: var(--font-mono); font-size: 9px; fill: var(--faint); }
+.pr-rulelbl {
+  position: absolute; left: clamp(1rem, 4vw, 3.5rem); top: var(--eye);
+  transform: translateY(-1.15rem); z-index: 3;
+}
 
-/* wayfinding: nine ticks up the right edge */
-.ph-nav { position: absolute; right: clamp(0.9rem, 2.4vw, 2rem); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 0.7rem; }
-.ph-nav i { width: 8px; height: 8px; border-radius: 50%; background: var(--hair); transition: background .3s ease, transform .3s ease, box-shadow .3s ease; }
-.ph-nav i.on { background: var(--good, var(--lite)); transform: scale(1.5); box-shadow: 0 0 14px color-mix(in oklch, var(--good) 80%, transparent); }
-.ph-nav i.past { background: var(--faint); }
+/* ---- a specimen ----
+   --xk staggers them across the aisle so two glass objects never stack up into mush; --lift hangs
+   each one above or below the 100 line by how far its real price actually strayed from it */
+.pr-spec {
+  position: absolute; left: 50%; top: var(--eye);
+  width: var(--obj); height: var(--obj); margin: calc(var(--obj) / -2) 0 0 calc(var(--obj) / -2);
+  transform: translate3d(
+    calc(var(--xk) * var(--xspread) * 1vmin),
+    calc(var(--lift) * var(--hall-lift) * -1),
+    var(--z, 0px));
+  opacity: var(--o, 0);
+  will-change: transform, opacity;
+}
+.pr-spec[data-far] { visibility: hidden; }
+.pr-spec .nine-obj { width: 100%; height: 100%; }
 
-.prism-scrollhint { position: absolute; left: 50%; bottom: 1.5rem; transform: translateX(-50%); z-index: 2; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; color: var(--faint); text-transform: uppercase; animation: phFloat 2.4s ease-in-out infinite; }
-@keyframes phFloat { 0%,100% { transform: translate(-50%, 0); opacity: .55; } 50% { transform: translate(-50%, 6px); opacity: 1; } }
+/* ---- HUD: the active specimen's verdict, on paper ---- */
+.pr-hud {
+  position: absolute; z-index: 4;
+  left: clamp(1rem, 4vw, 3.5rem); bottom: clamp(3.4rem, 7vh, 4rem);
+  width: min(27rem, 78vw);
+  opacity: 0; transform: translateY(10px);
+  transition: opacity .45s ease, transform .45s cubic-bezier(.22,.61,.36,1);
+}
+.pr-hud.is-on { opacity: 1; transform: none; }
+.pr-hud .nine-name { font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem); margin-top: 0.2rem; }
+.pr-hud .nine-pct { font-size: clamp(2.6rem, 1.8rem + 4.4vw, 4.6rem); margin: 0.1rem 0 0.35rem; }
+.pr-hud .nine-head { font-size: 1.05rem; }
+.pr-hud .nine-blurb { font-size: 0.98rem; margin-top: 0.35rem; }
+.pr-hud .nine-spark { width: 168px; height: 52px; margin-top: 0.9rem; }
 
-/* ---- gating: WebGL only when the engine is live; otherwise the static gallery ---- */
-.prism-fallback { list-style: none; margin: 0 auto; padding: clamp(2rem,6vh,4rem) 1.25rem clamp(4rem,10vh,7rem); max-width: 62rem; display: grid; gap: clamp(2.5rem, 6vh, 5rem); position: relative; z-index: 4; }
-.prism-fallback li { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.1fr); gap: clamp(1rem,4vw,3rem); align-items: center; }
-.prism-fallback li:nth-child(even) { direction: rtl; }
-.prism-fallback li:nth-child(even) > * { direction: ltr; }
-.pf-fig { margin: 0; }
-.pf-fig img { width: 100%; height: auto; display: block; filter: drop-shadow(0 0 46px color-mix(in oklch, var(--good) 40%, transparent)); }
-.pf-head { font-family: var(--disp); font-weight: 700; font-size: clamp(1.4rem,1.1rem+1.5vw,2.1rem); color: var(--good); letter-spacing: -0.02em; }
-.pf-pct { font-family: var(--font-mono); font-weight: 500; font-size: clamp(2.4rem,1.6rem+4vw,4rem); color: var(--good); letter-spacing: -0.04em; line-height: 1; margin: 0.2rem 0; }
-.pf-blurb { color: var(--muted); line-height: 1.6; max-width: 42ch; }
+/* ---- rail: the nine as ticks off a vertical 100 line — the skyline, stood on its side.
+   column-reverse so higher up the rail means a higher real price, matching the hall and the top
+   chart's y-axis; the highlight then climbs as you walk. ---- */
+.pr-rail {
+  position: absolute; z-index: 4; right: clamp(0.75rem, 2.5vw, 2.25rem); top: var(--eye);
+  transform: translateY(-50%); margin: 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column-reverse; gap: 0.95rem; width: 104px;
+}
+.pr-rail li { position: relative; height: 3px; }
+.pr-rail i {
+  position: absolute; top: 0; left: 50%; height: 3px; border-radius: 1.5px;
+  width: calc(6px + var(--w) * 44px); background: var(--good); opacity: 0.34;
+  transition: opacity .35s ease, transform .35s ease;
+}
+.pr-rail li[data-side='down'] i { left: auto; right: 50%; }
+.pr-rail li.on i { opacity: 1; transform: scaleY(1.8); }
+.pr-rail::before {                             /* the 100 line, again, as the rail's own axis */
+  content: ''; position: absolute; left: 50%; top: -14px; bottom: -14px; width: 1px;
+  background: repeating-linear-gradient(var(--rule) 0 4px, transparent 4px 9px);
+}
+.pr-railtag {
+  position: absolute; z-index: 4; right: clamp(0.75rem, 2.5vw, 2.25rem); top: var(--eye);
+  width: 104px; text-align: center;
+  transform: translateY(calc(-50% - 5.9rem));
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--ink-faint);
+}
 
-.prism[data-prism-js] .prism-fallback { display: none; }
-.prism:not([data-prism-js]) .prism-scroll { display: none; }
+.pr-hint {
+  position: absolute; z-index: 4; left: 50%; bottom: clamp(0.75rem, 3vh, 1.5rem);
+  transform: translateX(-50%);
+  font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-muted);
+  animation: prFloat 2.6s ease-in-out infinite;
+  transition: opacity .4s ease;
+}
+.prism[data-walking] .pr-hint { opacity: 0; }   /* a first-step affordance, not permanent chrome */
+@keyframes prFloat { 0%, 100% { transform: translate(-50%, 0); opacity: 0.5; } 50% { transform: translate(-50%, 5px); opacity: 1; } }
 
-@media (max-width: 720px) {
-  .prism-fallback li, .prism-fallback li:nth-child(even) { grid-template-columns: 1fr; direction: ltr; }
-  .ph-body { left: 1.1rem; right: 1.1rem; width: auto; bottom: 3.4rem; }
-  .ph-nav { display: none; }
+/* ---- gating: the hall only exists once the driver is live ---- */
+.prism:not([data-driven]) .pr-scroll { display: none; }
+
+@media (max-width: 860px) {
+  .prism { --obj: min(46vmin, 260px); --hall-lift: 150px; --gap: 760px; --eye: 36%; --xspread: 0.3; }
+  .pr-stage { perspective: 820px; }
+  .pr-rulelbl { left: 1rem; }
+  .pr-hud { left: 1rem; right: 1rem; width: auto; bottom: 3.2rem; }
+  .pr-hud .nine-blurb { max-width: none; }
+  .pr-rail, .pr-railtag, .pr-hint { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .prism-scrollhint { animation: none; }
-  .ph-body.is-on { transition: none; }
+  .pr-hint { animation: none; }
+  .pr-hud { transition: none; }
 }

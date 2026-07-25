@@ -1,203 +1,118 @@
-// Variation 1 · PRISM — the crystalline vault.
-// The nine items as glowing crystal artifacts suspended in a foggy void. Scroll dollies a camera
-// through them, best real deal → worst; UnrealBloom makes each crystal glow, a particle field gives
-// depth, and an HUD tracks the active item (name, count-up %, story, sparkline). Enhancement only:
-// under reduced-motion / no-WebGL / no-JS the static crystalline gallery (in the DOM) carries it.
-import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+// Variation 1 · PRISM — the specimen hall.
+// Scroll dollies a CSS-3D camera down a white hall of nine glass specimens, each hung off the same
+// dashed 100 line the top chart draws. No WebGL and no bloom pass: on paper, depth comes from
+// perspective plus fading into the paper itself, which is cheaper, sharper and works on a phone.
+// Enhancement only — without JS or under reduced-motion the authored gallery carries all nine.
 import { ITEMS, sparkPath } from '../lib/items.ts';
 
-const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const flat = location.search.includes('flat'); // escape hatch: force the static gallery
 const section = document.getElementById('prism');
-const canvas = document.getElementById('prismCanvas') as HTMLCanvasElement | null;
-const scroll = document.getElementById('prismScroll');
-const stage = document.getElementById('prismStage');
-if (section && canvas && scroll && stage && !reduced && !flat) init();
+const scroll = document.getElementById('prScroll');
+const stage = document.getElementById('prStage');
+const floor = document.getElementById('prFloor');
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const flat = location.search.includes('flat'); // escape hatch: force the authored gallery
 
-function init() {
+if (section && scroll && stage && floor && !reduced && !flat) init(section, scroll, stage, floor);
+
+function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement, floor: HTMLElement) {
   const N = ITEMS.length;
   const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+  const specs = ITEMS.map((_, i) => document.getElementById(`prSpec${i}`) as HTMLElement);
+  if (specs.some((s) => !s)) return;
 
-  // reveal the vault FIRST so the sticky stage has real dimensions before we size the renderer
-  // (its scroll container is display:none until this attribute is set → 0×0 framebuffer otherwise)
-  scroll!.style.height = `${N * 90 + 40}vh`;
-  section!.setAttribute('data-prism-js', '');
+  // reveal the hall first so the sticky stage has real dimensions to measure
+  scroll.style.height = `${N * 82 + 44}vh`;
+  section.setAttribute('data-driven', '');
 
-  let renderer: THREE.WebGLRenderer;
-  try {
-    renderer = new THREE.WebGLRenderer({ canvas: canvas!, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: true });
-  } catch { section!.removeAttribute('data-prism-js'); return; } // no WebGL → keep the static gallery
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; // compress highlights so bloom glows, not blows
-  renderer.toneMappingExposure = 0.92;
+  const gapOf = () => parseFloat(getComputedStyle(section).getPropertyValue('--gap')) || 900;
+  let GAP = gapOf();
+  const AHEAD = 1.5;   // how many gaps ahead a specimen starts fading up out of the paper
+  const PAST = 0.45;   // and how fast it fades once you've flown through it
+  const HOLD = 0.34;   // share of each segment spent parked on a specimen, not travelling
 
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0b0c14);
-  scene.fog = new THREE.FogExp2(0x0b0c14, 0.033);
-
-  const GAP = 7, VIEW = 7, SIZE = 3.8;
-  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
-  camera.position.set(0, 0, VIEW);
-
-  // nine crystal planes
-  const loader = new THREE.TextureLoader();
-  const planes: THREE.Mesh[] = [];
-  const baseY: number[] = [];
-  ITEMS.forEach((it, i) => {
-    const tex = loader.load(`/obj/${it.id}.png`);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = 4;
-    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 1 });
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(SIZE, SIZE), mat);
-    mesh.position.set(0, 0, -i * GAP);
-    scene.add(mesh);
-    planes.push(mesh); baseY.push(0);
-  });
-
-  // a soft spectral halo behind each crystal — a gentle ambient wash of its hue, not a flood
-  const halos: THREE.Sprite[] = [];
-  const haloTex = haloTexture();
-  ITEMS.forEach((it, i) => {
-    const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, color: new THREE.Color(it.rgb), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.13 }));
-    spr.scale.set(SIZE * 2.1, SIZE * 2.1, 1);
-    spr.position.set(0, 0, -i * GAP - 0.3);
-    scene.add(spr); halos.push(spr);
-  });
-
-  // drifting particle dust for depth
-  const PN = 1400;
-  const pg = new THREE.BufferGeometry();
-  const pos = new Float32Array(PN * 3);
-  for (let i = 0; i < PN; i++) {
-    pos[i * 3] = (Math.random() - 0.5) * 30;
-    pos[i * 3 + 1] = (Math.random() - 0.5) * 20;
-    pos[i * 3 + 2] = 4 - Math.random() * (N * GAP + 10);
+  // The camera dwells on each specimen, then moves; a constant-speed dolly would leave you between
+  // two half-faded objects most of the time. Same beat structure as the top chart's captions.
+  function dolly(p: number) {
+    const seg = p * (N - 1);
+    const i = Math.min(N - 2, Math.floor(seg));
+    const k = clamp((seg - i - HOLD) / (1 - 2 * HOLD));
+    return { z: (i + k * k * (3 - 2 * k)) * GAP, at: i + (k > 0.5 ? 1 : 0) };
   }
-  pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const particles = new THREE.Points(pg, new THREE.PointsMaterial({ color: 0x9fb2e6, size: 0.055, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true }));
-  scene.add(particles);
 
-  // bloom
-  const composer = new EffectComposer(renderer);
-  composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.42, 0.42, 0.62);
-  composer.addPass(bloom);
-  composer.addPass(new OutputPass());
+  const hud = document.getElementById('prHud')!;
+  const el = {
+    rank: document.getElementById('prRank')!, name: document.getElementById('prName')!,
+    pct: document.getElementById('prPct')!, head: document.getElementById('prHead')!,
+    blurb: document.getElementById('prBlurb')!, spark: document.getElementById('prSpark')!,
+  };
+  const railItems = Array.from(document.querySelectorAll<HTMLElement>('#prRail li'));
 
-  function resize() {
-    const w = stage!.clientWidth, h = stage!.clientHeight;
-    renderer.setSize(w, h, false);
-    composer.setSize(w, h);
-    camera.aspect = w / h; camera.updateProjectionMatrix();
-    bloom.resolution.set(w, h);
-  }
-  resize();
-
-  // ---- HUD ----
-  const phBody = document.getElementById('phBody')!;
-  const phName = document.getElementById('phName')!;
-  const phRank = document.getElementById('phRank')!;
-  const phPct = document.getElementById('phPct')!;
-  const phHead = document.getElementById('phHead')!;
-  const phBlurb = document.getElementById('phBlurb')!;
-  const phSpark = document.getElementById('phSpark')!;
-  const phNav = document.getElementById('phNav')!;
-  phNav.innerHTML = ITEMS.map(() => '<i></i>').join('');
-  const dots = Array.from(phNav.children) as HTMLElement[];
-
-  let shownPct = 0, pctTarget = 0, coState = -1;
+  let active = -1, shown = 0, target = 0;
   function setActive(i: number) {
-    if (i === coState) return;
+    if (i === active) return;
     const it = ITEMS[i];
-    phBody.style.setProperty('--good', it.color);
-    phName.textContent = it.label;
-    phRank.textContent = `${String(i + 1).padStart(2, '0')} / ${String(N).padStart(2, '0')}`;
-    phHead.textContent = it.head;
-    phBlurb.textContent = it.blurb;
-    const sp = sparkPath(it.real, 150, 46);
-    phSpark.innerHTML =
-      `<line class="base" x1="0" y1="${sp.baseY.toFixed(1)}" x2="150" y2="${sp.baseY.toFixed(1)}"/>` +
-      `<path class="ln" d="${sp.d}"/><circle class="dot" cx="${sp.endX.toFixed(1)}" cy="${sp.endY.toFixed(1)}" r="2.6"/>`;
-    dots.forEach((d, k) => { d.className = k === i ? 'on' : (k < i ? 'past' : ''); });
-    phBody.classList.add('is-on');
-    pctTarget = it.pct;
-    coState = i;
+    hud.style.setProperty('--good', it.color);
+    hud.style.setProperty('--good-ink', it.colorInk);
+    el.rank.textContent = String(i + 1).padStart(2, '0');
+    el.name.textContent = it.label;
+    el.head.textContent = it.head;
+    el.blurb.textContent = it.blurb;
+    const sp = sparkPath(it.real, 168, 52);
+    el.spark.innerHTML =
+      `<line class="base" x1="0" y1="${sp.baseY.toFixed(1)}" x2="168" y2="${sp.baseY.toFixed(1)}"/>` +
+      `<path class="ln" d="${sp.d}"/>` +
+      `<circle class="dot" cx="${sp.endX.toFixed(1)}" cy="${sp.endY.toFixed(1)}" r="2.8"/>`;
+    railItems.forEach((li, k) => li.classList.toggle('on', k === i));
+    hud.classList.add('is-on');
+    if (active === -1) shown = it.pct;  // first paint matches the server-rendered number
+    target = it.pct;
+    active = i;
   }
 
-  // ---- scroll ----
-  let curP = 0, tgtP = 0;
-  function progress() {
-    const r = scroll!.getBoundingClientRect();
-    const total = scroll!.offsetHeight - stage!.offsetHeight;
-    return clamp(-r.top / (total || 1));
-  }
-  window.addEventListener('scroll', () => { tgtP = progress(); }, { passive: true });
-  window.addEventListener('resize', () => { resize(); tgtP = progress(); });
+  let cur = 0, tgt = 0, raf = 0, last = 0;
+  const progress = () => {
+    const total = scroll.offsetHeight - stage.offsetHeight;
+    return clamp(-scroll.getBoundingClientRect().top / (total || 1));
+  };
 
-  // pointer parallax
-  let px = 0, py = 0, tpx = 0, tpy = 0;
-  window.addEventListener('pointermove', (e) => {
-    tpx = (e.clientX / window.innerWidth - 0.5) * 2;
-    tpy = (e.clientY / window.innerHeight - 0.5) * 2;
-  }, { passive: true });
+  function frame(now = performance.now()) {
+    raf = 0;
+    // time-based easing, so a throttled tab or a slow phone catches up instead of crawling
+    const dt = Math.min(200, last ? now - last : 16.7); last = now;
+    cur += (tgt - cur) * (1 - Math.pow(0.89, dt / 16.7));
+    if (Math.abs(tgt - cur) < 0.0002) cur = tgt;
 
-  resize(); // re-measure now that the stage is laid out
-  tgtP = progress();
+    const { z: camZ, at } = dolly(cur);
+    floor.style.setProperty('--floor-y', `${((camZ * 0.07) % 26).toFixed(1)}px`);
 
-  const clock = new THREE.Clock();
-  function frame() {
-    const t = clock.getElapsedTime();
-    curP += (tgtP - curP) * 0.12;
-    if (Math.abs(tgtP - curP) < 1e-4) curP = tgtP;
-
-    const camZ = VIEW - curP * (N - 1) * GAP;
-    px += (tpx - px) * 0.05; py += (tpy - py) * 0.05;
-    camera.position.set(px * 0.9, -py * 0.6, camZ);
-    camera.lookAt(px * 0.3, -py * 0.2, camZ - VIEW);
-
-    const centerIdx = curP * (N - 1);
-    planes.forEach((m, i) => {
-      m.position.y = baseY[i] + Math.sin(t * 0.5 + i * 1.3) * 0.11;
-      m.rotation.z = Math.sin(t * 0.25 + i) * 0.02;
-      const vis = Math.max(0, 1 - Math.abs(i - centerIdx) * 0.85); // only the active crystal dominates
-      (m.material as THREE.MeshBasicMaterial).opacity = vis;
-      const h = halos[i]; h.position.y = m.position.y * 0.6;
-      (h.material as THREE.SpriteMaterial).opacity = vis * (0.12 + 0.04 * Math.sin(t + i));
+    specs.forEach((s, i) => {
+      const z = camZ - i * GAP;
+      // 1.3× so the focused specimen sits at full strength through its whole dwell
+      const o = z <= 0 ? clamp(1.3 * (1 + z / (AHEAD * GAP))) : clamp(1 - z / (PAST * GAP));
+      if (o <= 0.004) {
+        if (!s.hasAttribute('data-far')) s.setAttribute('data-far', '');
+        return;
+      }
+      s.removeAttribute('data-far');
+      s.style.setProperty('--z', `${z.toFixed(1)}px`);
+      s.style.setProperty('--o', o.toFixed(3));
     });
-    particles.rotation.y = t * 0.01;
-    particles.rotation.x = Math.sin(t * 0.05) * 0.05;
 
-    const active = Math.round(curP * (N - 1));
-    setActive(active);
-    if (shownPct !== pctTarget) {
-      shownPct += (pctTarget - shownPct) * 0.16;
-      if (Math.abs(pctTarget - shownPct) < 0.5) shownPct = pctTarget;
-      const v = Math.round(shownPct);
-      phPct.textContent = `${v >= 0 ? '+' : '−'}${Math.abs(v)}%`;
+    setActive(at);
+    section.toggleAttribute('data-walking', cur > 0.02);
+    if (shown !== target) {
+      shown += (target - shown) * 0.18;
+      if (Math.abs(target - shown) < 0.5) shown = target;
+      const v = Math.round(shown);
+      el.pct.textContent = `${v >= 0 ? '+' : '−'}${Math.abs(v)}%`;
     }
 
-    composer.render();
-    requestAnimationFrame(frame);
+    if (cur !== tgt) schedule();
   }
-  requestAnimationFrame(frame);
-}
+  function schedule() { if (!raf) raf = requestAnimationFrame(frame); }
 
-// radial soft-glow sprite texture (white → transparent), tinted per item via material color
-function haloTexture(): THREE.Texture {
-  const s = 128;
-  const cv = document.createElement('canvas'); cv.width = cv.height = s;
-  const ctx = cv.getContext('2d')!;
-  const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
-  g.addColorStop(0, 'rgba(255,255,255,0.9)');
-  g.addColorStop(0.4, 'rgba(255,255,255,0.25)');
-  g.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, s, s);
-  const tex = new THREE.CanvasTexture(cv);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
+  window.addEventListener('scroll', () => { tgt = progress(); schedule(); }, { passive: true });
+  window.addEventListener('resize', () => { GAP = gapOf(); tgt = progress(); schedule(); });
+  tgt = cur = progress();
+  frame(performance.now());
 }

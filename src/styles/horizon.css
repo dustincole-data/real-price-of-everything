@@ -1,69 +1,141 @@
-/* ===== Variation 3 · HORIZON — a horizontal cinematic filmstrip of the nine ===== */
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&display=swap');
+/* ===== Variation 3 · HORIZON — the filmstrip ===============================================
+   The skyline, exploded across nine screens. Every panel plots its item on the TOP CHART'S OWN
+   y-scale (0–380, 100 = kept pace), so the dashed 100 line runs unbroken across the whole strip and
+   each glass object sits exactly where that thing landed in 2024. Vertical scroll pans sideways on
+   a wide screen; a swipeable snap-carousel on a small one. Same paper, same grid, same type. */
+@import './nine.css';
 
 .horizon {
-  --base: oklch(0.15 0.028 275);
-  --lite: oklch(0.97 0.01 275);
-  --muted: oklch(0.76 0.02 275);
-  --faint: oklch(0.58 0.02 275);
-  --hair: oklch(0.34 0.02 275);
-  --grot: 'Bricolage Grotesque', system-ui, sans-serif;
-  position: relative; background: var(--base); color: var(--lite); isolation: isolate;
+  --band-top: 15%;                 /* the plot band, identical on every panel so the 100 line lines up */
+  --band-bot: 17%;
+  --base-y: 73.684%;               /* 280/380 — where index 100 falls inside the band */
+  --strip-h: clamp(78px, 11vw, 112px);
 }
-.horizon::before { content: ''; position: absolute; inset: 0 0 auto; height: 24vh; z-index: 8; pointer-events: none; background: linear-gradient(var(--paper), transparent); }
 
-.hz-intro { position: relative; z-index: 6; text-align: center; padding: clamp(5.5rem, 16vh, 9rem) 1.25rem clamp(1.5rem, 5vh, 3rem); }
-.hz-intro .k { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
-.hz-intro h2 { font-family: var(--grot); font-weight: 800; font-size: clamp(2rem, 1.4rem + 3.2vw, 4rem); letter-spacing: -0.03em; line-height: 1; margin: 0.5rem auto 0; max-width: 20ch; }
-.hz-intro p { color: var(--muted); max-width: 44ch; margin: 0.9rem auto 0; line-height: 1.55; }
+/* ---- docked mini-skyline: the top chart's staircase, kept in view while you pan ---- */
+.hz-strip {
+  position: sticky; top: var(--mast); z-index: var(--z-chiprail);
+  height: var(--strip-h); display: flex; flex-direction: column; justify-content: center;
+  padding: 0.35rem clamp(0.75rem, 3vw, 2rem) 0.4rem;
+  background: var(--paper); border-bottom: 1px solid var(--grid);
+}
+.hz-strip-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); margin-bottom: 4px; }
+.hz-strip-tag { font-family: var(--font-mono); font-size: 0.7rem; color: var(--ink-muted); }
+.hz-strip-live { font-size: 0.74rem; font-weight: 600; color: var(--good, var(--ink)); opacity: 0; white-space: nowrap; transition: opacity .3s ease, color .3s ease; }
+.hz-strip-live.is-on { opacity: 1; }
+.hz-strip-inner { position: relative; flex: 1 1 auto; min-height: 0; }
+.hz-strip-svg { display: block; width: 100%; height: 100%; }
+.hz-strip-svg .base { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 4 4; }
+.hz-strip-svg rect { transition: opacity .3s ease; }
+.hz-strip-svg rect.dim { opacity: 0.6; }
+.hz-pin {
+  position: absolute; top: -4px; width: 0; height: 0; margin-left: -5px; opacity: 0;
+  border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-top: 8px solid var(--good, var(--ink));
+  transition: transform .4s cubic-bezier(.3,0,.1,1), opacity .3s ease, border-top-color .4s ease;
+}
 
-/* default (no-JS / reduced-motion / mobile): panels stack vertically */
+/* ---- stage ---- */
 .hz-scroll { position: relative; }
 .hz-stage { position: relative; }
-.hz-track { display: flex; flex-direction: column; }
-.hz-panel {
-  position: relative; min-height: 100svh; flex: none; overflow: clip;
-  display: grid; align-items: center; grid-template-columns: 1.05fr 0.95fr; gap: clamp(1rem, 4vw, 4rem);
-  padding: clamp(3rem, 9vh, 6rem) clamp(1.4rem, 6vw, 6rem);
+.hz-grid { z-index: 0; background-position: var(--gx, 0px) 0, var(--gx, 0px) 0; }
+
+/* One axis for all nine, drawn once at stage level and sitting ABOVE the panels so it never breaks
+   between them: the same 0–380 scale, the same faint rules and the same dashed 100 as the top chart.
+   This is what makes nine screens read as one chart rather than nine thumbnails. */
+.hz-plotbox { position: absolute; left: 0; right: 0; top: var(--band-top); bottom: var(--band-bot); z-index: 5; pointer-events: none; }
+.hz-axis { position: absolute; left: 0; right: 0; height: 1px; background: var(--grid); }
+.hz-axislbl {
+  position: absolute; left: clamp(0.5rem, 2vw, 1.5rem); transform: translateY(-0.62em);
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--ink-faint);
 }
-.hz-panel::before {
-  content: ''; position: absolute; inset: 0; z-index: -2;
-  background:
-    radial-gradient(90% 70% at 78% 40%, color-mix(in oklch, var(--good) 26%, transparent), transparent 70%),
-    linear-gradient(120deg, color-mix(in oklch, var(--good) 12%, var(--base)), var(--base) 55%);
+.hz-baseline { position: absolute; left: 0; right: 0; top: var(--base-y); height: 1px; background: repeating-linear-gradient(90deg, var(--rule) 0 5px, transparent 5px 11px); }
+.hz-baselbl { position: absolute; left: clamp(3rem, 6vw, 5rem); top: var(--base-y); transform: translateY(-1.35rem); }
+
+/* ---- panels: transparent, so the shared graph paper and the shared axis carry through ---- */
+.hz-track { display: flex; flex-direction: column; position: relative; z-index: 2; }
+.hz-panel { position: relative; flex: none; min-height: 100svh; overflow: clip; }
+
+/* the trajectory: value → y on the shared 0–380 axis, stretched to the plot band */
+.hz-plot { position: absolute; left: 0; right: 0; top: var(--band-top); bottom: var(--band-bot); }
+.hz-line { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+.hz-line .ln { fill: none; stroke: var(--good); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.hz-line .area { fill: var(--good); opacity: 0.08; }
+.hz-yr { position: absolute; font-family: var(--font-mono); font-size: 0.7rem; color: var(--ink-faint); }
+.hz-yr.a { left: 40%; } .hz-yr.b { left: 88%; transform: translateX(-50%); }
+.hz-yr { bottom: -1.6rem; }
+
+/* the glass object marks the 2024 endpoint */
+.hz-fig {
+  position: absolute; left: 88%; top: calc(var(--oy) * 100%);  /* the line's 2024 endpoint */
+  transform: translate(-50%, -50%); margin: 0;
+  --obj: min(21vmin, 190px);
+  will-change: transform;
 }
-.hz-orb { position: absolute; z-index: -1; right: 8%; top: 40%; width: 60vmin; height: 60vmin; border-radius: 50%; background: radial-gradient(circle, color-mix(in oklch, var(--good) 55%, transparent), transparent 62%); filter: blur(36px); opacity: 0.5; }
 
-.hz-fig { grid-column: 2; margin: 0; display: flex; justify-content: center; align-items: center; will-change: transform; }
-.hz-fig img { width: min(40vw, 58vh); max-width: 520px; height: auto; display: block; filter: drop-shadow(0 30px 70px color-mix(in oklch, var(--good) 45%, transparent)); }
+/* the verdict sits on the chart, with paper knocked out behind it so the shared gridlines pass
+   around it rather than through the copy — the same move the live ranking panels make */
+.hz-txt {
+  position: absolute; z-index: 6; left: 0; top: var(--band-top);
+  width: min(34rem, 42vw); background: var(--paper);
+  padding: 0.5rem clamp(1.2rem, 3vw, 2.4rem) 1rem clamp(1.4rem, 6vw, 5rem);
+}
+.hz-txt .nine-name { font-size: clamp(1.7rem, 1.2rem + 2vw, 3rem); margin-top: 0.25rem; }
+.hz-txt .nine-pct { font-size: clamp(3rem, 2rem + 5.5vw, 6rem); margin: 0.15rem 0 0.4rem; }
+.hz-txt .nine-head { font-size: 1.06rem; }
+.hz-txt .nine-blurb { font-size: 1rem; margin-top: 0.4rem; max-width: 34ch; }
 
-.hz-txt { grid-column: 1; max-width: 40rem; will-change: transform; }
-.hz-idx { font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
-.hz-name { font-family: var(--grot); font-weight: 800; font-size: clamp(2.4rem, 1.6rem + 4vw, 5.2rem); letter-spacing: -0.035em; line-height: 0.95; color: var(--lite); margin: 0.3rem 0 0; }
-.hz-pct { font-family: var(--grot); font-weight: 800; font-size: clamp(4rem, 2.4rem + 9vw, 11rem); line-height: 0.86; letter-spacing: -0.05em; color: var(--good); margin: 0.2rem 0; font-variant-numeric: tabular-nums; text-shadow: 0 0 60px color-mix(in oklch, var(--good) 45%, transparent); }
-.hz-blurb { color: var(--muted); font-size: clamp(1rem, 0.95rem + 0.4vw, 1.22rem); line-height: 1.6; max-width: 40ch; }
-.hz-spark { margin-top: 1.2rem; width: 190px; height: 58px; display: block; overflow: visible; }
-.hz-spark .base { stroke: var(--hair); stroke-width: 1; stroke-dasharray: 3 4; }
-.hz-spark .ln { fill: none; stroke: var(--good); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 8px color-mix(in oklch, var(--good) 70%, transparent)); }
-.hz-spark .dot { fill: var(--good); }
+.hz-hint {
+  position: absolute; right: clamp(1rem, 4vw, 3rem); bottom: clamp(1rem, 3.5vh, 2rem); z-index: 7;
+  font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-muted);
+  transition: opacity .4s ease;
+}
+.horizon[data-panning] .hz-hint { opacity: 0; }
 
-/* progress bar (JS mode) */
-.hz-progress { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: transparent; z-index: 7; }
-.hz-progress i { display: block; height: 100%; width: 0%; background: var(--good, var(--lite)); box-shadow: 0 0 16px color-mix(in oklch, var(--good) 80%, transparent); transition: background .4s; }
-.hz-hint { position: absolute; right: clamp(1rem, 4vw, 3rem); bottom: clamp(1.2rem, 4vh, 2.4rem); z-index: 7; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); display: flex; align-items: center; gap: 0.5rem; }
+/* ---- driven mode: vertical scroll pans the strip sideways ---- */
+.horizon[data-hz-pan] .hz-stage { position: sticky; top: calc(var(--mast) + var(--strip-h)); height: calc(100svh - var(--mast) - var(--strip-h)); overflow: clip; }
+.horizon[data-hz-pan] .hz-track { flex-direction: row; width: max-content; height: 100%; will-change: transform; }
+.horizon[data-hz-pan] .hz-panel { width: 100vw; min-height: 0; height: 100%; }
+.horizon:not([data-hz-pan]) .hz-hint { display: none; }
 
-/* ---- horizontal mode when the engine is live ---- */
-.horizon[data-hz-js] .hz-stage { position: sticky; top: 0; height: 100svh; overflow: clip; }
-.horizon[data-hz-js] .hz-track { flex-direction: row; width: max-content; height: 100svh; will-change: transform; }
-.horizon[data-hz-js] .hz-panel { width: 100vw; min-height: 0; height: 100svh; }
-.horizon:not([data-hz-js]) .hz-progress, .horizon:not([data-hz-js]) .hz-hint { display: none; }
+/* not panning (stacked or swiped): the axis rides inside each panel instead of the stage, so every
+   trajectory is still read against the same 0–380 scale */
+.hz-axis-own { display: none; }
+.horizon:not([data-hz-pan]) .hz-plotbox { display: none; }
+.horizon:not([data-hz-pan]) .hz-axis-own { display: block; }
+.hz-axis-own[data-v='100'] {
+  background: repeating-linear-gradient(90deg, var(--rule) 0 5px, transparent 5px 11px);
+}
+.hz-axis-own::after {
+  content: attr(data-v); position: absolute; left: 0; transform: translateY(-0.62em);
+  font-family: var(--font-mono); font-size: 0.66rem; color: var(--ink-faint);
+  background: var(--paper); padding-right: 0.35em;
+}
 
-/* entrance for the vertical fallback only (JS-horizontal handles its own reveal via parallax) */
+/* ---- small screens: a real swipeable carousel, never a hijacked scroll ---- */
 @media (max-width: 860px) {
-  .hz-panel, .horizon[data-hz-js] .hz-panel { grid-template-columns: 1fr; text-align: left; }
-  .hz-fig, .hz-txt { grid-column: 1; }
-  .hz-fig img { width: min(66vw, 44vh); }
+  .horizon { --band-top: 12%; --band-bot: 26%; }
+  .hz-scroll {
+    display: flex; overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x mandatory; scroll-behavior: smooth;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .hz-scroll::-webkit-scrollbar { display: none; }
+  .hz-stage { display: flex; }
+  .hz-track { flex-direction: row; }
+  .hz-panel { width: 100vw; scroll-snap-align: start; min-height: calc(100svh - var(--mast) - var(--strip-h)); }
+  .hz-txt { position: static; width: auto; background: none; padding: clamp(1.6rem, 6vh, 2.5rem) clamp(1.2rem, 6vw, 2rem) 0; }
+  .hz-txt .nine-blurb { max-width: 38ch; }
+  /* headroom under the plot so a specimen sitting at the very bottom of the axis (a TV at −100%)
+     stays whole instead of being clipped by the panel edge */
+  .hz-plot { top: auto; bottom: 14%; height: 50%; }
+  .hz-fig { --obj: min(30vmin, 170px); left: 78%; }   /* keeps the halo off the panel's clip edge */
+  .hz-yr { bottom: -1.5rem; }
+  .hz-yr.a { left: 40%; } .hz-yr.b { left: auto; right: 0.6rem; transform: none; }
+  .hz-hint { display: none; }
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .hz-orb { display: none; }
+  .hz-pin, .hz-strip-live, .hz-rail i, .hz-strip-svg rect { transition: none; }
+  .hz-scroll { scroll-behavior: auto; }
 }
