@@ -5,7 +5,7 @@
 // measured in px on init/resize, so bars are tall on a phone and wide on desktop with no
 // horizontal scroll, ever. Beat 3 plays each good's real 1980→2024 series (from series.json)
 // as the tide drains, so bars breathe (gas jitters, eggs spike) and settle at real heights.
-// No-JS / reduced-motion content is the static skyline baked in index.astro; this only enhances.
+// No-JS / reduced-motion content is the static skyline baked in TopStory.astro; this only enhances.
 
 import seriesData from '../data/series.json';
 import type { SeriesData, Good } from '../lib/types.ts';
@@ -212,7 +212,7 @@ function render(p: number) { renderBars(p); renderCaps(p); }
 
 /* ---- scroll drive (rAF + light lerp smoothing) ---- */
 // The stage now ends at the split-settle: beats 2–3 (teach + split) fill the whole scrolly,
-// then the per-good gallery (#ranking) takes over below. Raw scroll [0,1] maps to [0,SPLIT_END]
+// then the specimen hall (#prism) takes over below. Raw scroll [0,1] maps to [0,SPLIT_END]
 // so teach + split render EXACTLY as before (their windows/thresholds untouched); the old tour +
 // verdict beats — removed from the DOM — are simply never reached.
 const SPLIT_END = 0.5;

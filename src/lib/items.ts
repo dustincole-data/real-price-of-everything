@@ -43,7 +43,7 @@ export interface Item {
   id: string; label: string; emoji: string; head: string; blurb: string;
   idx: number; pct: number; real: (number | null)[]; pole: 'up' | 'down';
   hue: number; mag: number; lift: number;
-  color: string; colorInk: string; colorDark: string; rise: boolean;
+  color: string; colorInk: string; rise: boolean;
 }
 
 export const ITEMS: Item[] = ranked.map((g) => {
@@ -63,7 +63,6 @@ export const ITEMS: Item[] = ranked.map((g) => {
     lift: Math.sign(dev(g)) * Math.sqrt(Math.abs(dev(g)) / maxAll),
     color: `oklch(${L.toFixed(3)} ${C.toFixed(3)} ${h})`,            // large marks on paper (≥3:1)
     colorInk: `oklch(${(Math.min(L, 0.48) - 0.02 * mag).toFixed(3)} ${(C * 0.92).toFixed(3)} ${h})`,
-    colorDark: `oklch(0.72 0.18 ${h})`,                              // dark-ground pages (strata)
     rise: dev(g) >= 0,
   };
 });

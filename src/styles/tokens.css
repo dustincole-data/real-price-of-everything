@@ -40,7 +40,7 @@
   --stage-w: min(1100px, 94vw); /* wider chart band */
 
   /* --- 2.4 z-index (semantic, no 999) --- */
-  --z-chart: 10; --z-caption: 20; --z-chiprail: 30; --z-capstone: 40;
+  --z-chart: 10; --z-caption: 20;
 
   /* --- focus --- */
   --focus-ring: 2px solid var(--ink);

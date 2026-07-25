@@ -1,267 +1,97 @@
 ---
+// The site: the drain-the-tide top (TopStory), then PRISM — the specimen hall — as the after
+// section. Graduated from /prism on 2026-07-25; the horizon and strata variations are retired.
 import Base from '../layouts/Base.astro';
-import seriesData from '../data/series.json';
-import type { SeriesData, Good } from '../lib/types.ts';
+import TopStory from '../components/TopStory.astro';
+import Footer from '../components/Footer.astro';
+import { ITEMS, sparkPath } from '../lib/items.ts';
+import '../styles/prism.css';
 
-const data = seriesData as unknown as SeriesData;
-const { latestYear } = data.meta;
-const g = (id: string) => data.goods.find((x) => x.id === id) as Good;
-const stamp = g('stamp');
-const gas = g('gas');
-const eggs = g('eggs');
-
-// ---- static final skyline (no-JS + reduced-motion fallback; also the verdict frame) ----
-// Ascending real-2024 endpoint = a rising staircase, blue below / rose above the 100 line.
-const EMOJI: Record<string, string> = {
-  tv: '📺', clothing: '👕', gas: '⛽', eggs: '🥚', stamp: '✉️',
-  rent: '🏠', childcare: '🍼', healthcare: '🏥', college: '🎓',
-};
-const sky = [...data.goods].sort((a, b) => a.realIndexToday - b.realIndexToday);
-const SW = 1000, SH = 560, SDMAX = 380;
-// no y-axis ticks any more, so the plot runs nearly edge to edge
-const sPL = 16, sPR = SW - 16, sPT = Math.round(SH * 0.09), sPB = SH - 46, sPW = sPR - sPL;
-const syFor = (v: number) => sPB - (Math.max(0, Math.min(SDMAX, v)) / SDMAX) * (sPB - sPT);
-const sSlot = sPW / sky.length;
-const sBarW = Math.min(56, sSlot * 0.52);
-const sBaseY = syFor(100);
-const skyBars = sky.map((gd, i) => {
-  const x = sPL + (i + 0.5) * sSlot;
-  const y = syFor(gd.realIndexToday);
-  const pct = Math.round(gd.realIndexToday - 100);
-  return {
-    gd, x, y, h: sPB - y, pct,
-    color: gd.pole === 'up' ? 'var(--pole-up)' : 'var(--pole-down)',
-    emoji: EMOJI[gd.id],
-  };
-});
-
-// ===== "The Ranking" per-good gallery (issue 09) =====
-// Same ascending order as the skyline: best real deal today (TV) → worst (college).
-const rank = sky;
-const col = (pole: string) => (pole === 'up' ? 'var(--pole-up)' : 'var(--pole-down)');
-
-// ---- docked strip: the whole staircase in miniature + 100 baseline ----
-const STW = 1000, STH = 128, STDMAX = 380;
-const stPL = 18, stPR = STW - 18, stPT = 22, stPB = STH - 14, stPW = stPR - stPL;
-const stY = (v: number) => stPB - (Math.max(0, Math.min(STDMAX, v)) / STDMAX) * (stPB - stPT);
-const stSlot = stPW / rank.length;
-const stBarW = Math.min(24, stSlot * 0.46);
-const stBaseY = stY(100);
-const stripBars = rank.map((gd, i) => {
-  const x = stPL + (i + 0.5) * stSlot;
-  const y = stY(gd.realIndexToday);
-  return { gd, x: x - stBarW / 2, w: stBarW, y, h: stPB - y, color: col(gd.pole) };
-});
-
-// ---- per-good hero line: the good's real 1980→2024, framed tight to its own range with
-//      the 100 baseline marked. (Cross-good comparison is carried by the docked strip; each
-//      panel frames its own line so the texture — TV plunge, college climb, eggs jitter — fills
-//      the hero band instead of leaving dead space on a shared 0–380 scale.) ----
-const LW = 1000, LH = 280;
-const lPL = 14, lPR = LW - 14, lPT = 24, lPB = LH - 20;
-const NY = data.meta.years.length;
-const lX = (i: number) => lPL + (i / (NY - 1)) * (lPR - lPL);
-const lineFrame = (real: (number | null)[]) => {
-  const vals = real.filter((v): v is number => v != null);
-  let lo = Math.min(100, ...vals), hi = Math.max(100, ...vals);
-  const pad = (hi - lo) * 0.14 || 10;
-  lo -= pad; hi += pad;
-  const yv = (v: number) => lPB - ((v - lo) / (hi - lo)) * (lPB - lPT);
-  const pts: { x: number; y: number }[] = [];
-  real.forEach((v, i) => { if (v != null) pts.push({ x: lX(i), y: yv(v) }); });
-  return { pts, baseY: yv(100) };
-};
-const lineD = (p: { x: number; y: number }[]) =>
-  p.map((q, i) => `${i ? 'L' : 'M'}${q.x.toFixed(1)} ${q.y.toFixed(1)}`).join(' ');
-const areaD = (p: { x: number; y: number }[]) =>
-  p.length ? `M${p.map((q) => `${q.x.toFixed(1)} ${q.y.toFixed(1)}`).join('L')}L${p[p.length - 1].x.toFixed(1)} ${lPB}L${p[0].x.toFixed(1)} ${lPB}Z` : '';
-
-// blurbs — reuse the per-good captions authored for the old tours (stamp is newly written)
-const BLURBS: Record<string, { html: string; note?: string }> = {
-  tv: { html: 'A television falls <b>off the bottom.</b> The same money buys vastly more TV.', note: 'Constant-quality: a 2024 4K set measured against a 1960 console.' },
-  clothing: { html: 'Clothing gets <b>quietly cheaper,</b> decade after decade.' },
-  gas: { html: 'Gas swings with every crisis and boom — but in real terms a gallon costs <b>less</b> than it did in 1980.' },
-  eggs: { html: 'Eggs are the noisy one — bird-flu spikes — but land <b>about where they began.</b>' },
-  stamp: { html: 'A first-class stamp <b>barely moved</b> in real terms. It didn’t get pricier — your dollar got smaller.' },
-  rent: { html: 'Rent is the one you <b>can’t opt out of.</b> It rises across the whole window.', note: 'CPI rent of a primary residence.' },
-  childcare: { html: 'Childcare arrives late, around 1990, and <b>climbs the fastest of all.</b>' },
-  healthcare: { html: 'Medical care never stops rising. Not a spike — <b>a slope that steepens.</b>' },
-  college: { html: 'College tuition <b>climbs, and keeps climbing</b> — up about 248% in real terms.' },
-};
-
-// weighted scroll length ∝ sqrt(|real − 100|): TV & college get long cinematic descents,
-// the kept-pace middle (eggs, stamp) flicks past fast. sqrt (not linear) so college's +248%
-// outlier doesn't flatten everyone else into the floor — TV's -100% still reads as a second
-// long descent instead of landing mid-pack with gas/rent. Each card sticky-dwells at center for
-// (panel − viewport); the floor keeps the card ≈ a viewport tall so it centers cleanly, then
-// deviation buys the extra dwell on top. Tune here (open item, decided on the anchor).
-const MAXDEV = Math.max(...rank.map((gd) => Math.abs(gd.realIndexToday - 100)));
-const MINVH = 94, MAXVH = 176;
-const panelData = rank.map((gd) => {
-  const { pts, baseY } = lineFrame(gd.real);
-  const dev = Math.abs(gd.realIndexToday - 100);
-  const pct = Math.round(gd.realIndexToday - 100);
-  const v = gd.realIndexToday;
-  return {
-    gd, emoji: EMOJI[gd.id], color: col(gd.pole), pct, baseY,
-    d: lineD(pts), area: areaD(pts), end: pts[pts.length - 1],
-    indexLabel: v < 10 ? v.toFixed(1) : String(Math.round(v)),
-    vh: Math.round(MINVH + Math.sqrt(dev / MAXDEV) * (MAXVH - MINVH)),
-    blurb: BLURBS[gd.id],
-  };
-});
-const panels = panelData;
+const nine = ITEMS.map((it, i) => ({ it, i, spark: sparkPath(it.real, 168, 52) }));
+const first = nine[0];
 ---
 <Base>
-  <header class="masthead">
-    <span class="title">The Real Price of Everything</span>
-    <span class="src">1980&ndash;{latestYear} · real, inflation-adjusted</span>
-  </header>
-
-  <main>
-    <!-- ===== BEAT 1 — the shared lie (normal flow, above the sticky stage) ===== -->
-    <section class="hero measure">
-      <p class="kicker">Everything costs more than it used to.</p>
-      <h1>The Real Price of Everything</h1>
-      <p class="lede">A stamp. A gallon of gas. A dozen eggs. The numbers only ever go up.</p>
-      <div class="nominal-wall">
-        <div class="stat">
-          <span class="k">A first-class stamp</span>
-          <span class="v">{stamp.nominalThen}<span class="arrow">→</span>{stamp.nominalNow}</span>
-        </div>
-        <div class="stat">
-          <span class="k">A gallon of gas</span>
-          <span class="v">{gas.nominalThen}<span class="arrow">→</span>{gas.nominalNow}</span>
-        </div>
-        <div class="stat">
-          <span class="k">A dozen eggs</span>
-          <span class="v">{eggs.nominalThen}<span class="arrow">→</span>{eggs.nominalNow}</span>
-        </div>
-      </div>
-      <p class="go">Scroll ↓ and watch the single story come apart.</p>
-    </section>
-
-    <!-- linear narrative for screen readers (the scroll is visual; this carries the meaning) -->
-    <p class="sr-only">
-      What follows is an inflation-adjusted price chart that transforms as you scroll, indexed to 100 in 1980.
-      First it teaches the idea on a single first-class stamp: its price climbed in dollars, but once you subtract
-      inflation the stamp barely moved. Then it applies that lens to nine everyday things at once, and they split
-      in two. The things you can choose fall below the inflation line or hold near it: televisions and clothing drop
-      steeply, gas and eggs swing but land near or below where they began, and a stamp holds. The things you cannot
-      opt out of rise far above it: college tuition climbs the most, then healthcare, then childcare, then rent.
-    </p>
-
-    <!-- ===== DRAIN THE TIDE — sticky stage, beats 2 to 6 ===== -->
-    <div class="scrolly" id="scrolly">
-      <div class="stage" id="stage">
-        <div class="vizwrap">
-          <!-- JS-driven chart (built by scroll.ts); decorative for SR — narrated above + in captions -->
-          <svg id="viz" role="img" aria-hidden="true"></svg>
-          <!-- no-JS / reduced-motion fallback: the static final skyline -->
-          <svg id="skyline" class="chart" viewBox={`0 0 ${SW} ${SH}`} role="img"
-               aria-label="Nine everyday things, real price indexed to 100 in 1980. Services rise far above the inflation baseline; goods fall below or hold near it.">
-            <line class="base" x1={sPL} y1={sBaseY} x2={sPR} y2={sBaseY} />
-            <text class="baselbl" x={sPL} y={sBaseY - 6}>kept pace with inflation</text>
-            {skyBars.map((b) => (
-              <g>
-                <rect x={b.x - sBarW / 2} y={b.y} width={sBarW} height={b.h} rx="2.5" fill={b.color} fill-opacity="0.9" />
-                <text class="emoji" x={b.x} y={b.y - 18} font-size="22">{b.emoji}</text>
-                <text class="val" x={b.x} y={b.y - 42} font-size="18" fill={b.color}>
-                  {b.pct >= 0 ? '+' : '−'}{Math.abs(b.pct)}%
-                </text>
-                <text class="glab" x={b.x} y={sPB + 22} font-size="14">{b.gd.label}</text>
-              </g>
-            ))}
-          </svg>
-        </div>
-
-        <div class="capbox" id="caps">
-          <!-- beat 2 — teach on one stamp -->
-          <p class="cap" data-in="0.00" data-out="0.075">
-            A first-class stamp cost <b>{stamp.nominalThen}</b> in 1980.
-          </p>
-          <p class="cap" data-in="0.075" data-out="0.15">
-            In dollars it climbed to <b>{stamp.nominalNow}</b> — like everything did. That rise is inflation. <span class="soft">The shared tide.</span>
-          </p>
-          <p class="cap" data-in="0.15" data-out="0.235">
-            Drain the inflation back out and the stamp <b>barely moved.</b> <span class="soft">It didn't get pricier — your dollar got smaller.</span>
-          </p>
-          <!-- handoff -->
-          <p class="cap lead" data-in="0.235" data-out="0.30">Now do it to <b>everything at once.</b></p>
-          <!-- beat 3 — the split + year-play (the last beat of the sticky stage;
-               the per-good gallery below now carries the good-by-good tour) -->
-          <p class="cap" data-in="0.30" data-out="0.385">
-            Every everyday price rides the same tide up. <b>Looks like one story.</b>
-          </p>
-          <p class="cap" data-in="0.385" data-out="0.46">
-            Play the years back and drain the inflation, and the one story <b>splits in two.</b>
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== THE RANKING — per-good gallery, best real deal → worst ===== -->
-    <section class="ranking" id="ranking" aria-label="Each thing on its own, best real deal today to worst.">
-      <!-- docked strip: the whole staircase in miniature; a pin lights the current good.
-           Bars scale full-bleed (preserveAspectRatio=none); the pin + spotlight are HTML
-           overlays JS positions in px, so they stay crisp at any width. -->
-      <div class="strip" id="strip">
-        <div class="strip-tag-row">
-          <span class="strip-tag mono">real price · 1980 = 100</span>
-          <span class="strip-active mono" id="stripActive" aria-hidden="true"></span>
-        </div>
-        <div class="strip-inner" id="stripInner">
-          <div class="strip-band" id="stripBand" aria-hidden="true"></div>
-          <svg class="strip-svg" viewBox={`0 0 ${STW} ${STH}`} preserveAspectRatio="none" role="img"
-               aria-label="Miniature of the nine-bar real-price staircase, ascending from cheapest in real terms to most expensive.">
-            <line class="base" x1={stPL} y1={stBaseY} x2={stPR} y2={stBaseY} vector-effect="non-scaling-stroke" />
-            {stripBars.map((b) => (
-              <rect class="stbar" data-good={b.gd.id} x={b.x} y={b.y} width={b.w} height={b.h} fill={b.color} fill-opacity="0.9" />
-            ))}
-          </svg>
-          <i class="strip-pin" id="stripPin" aria-hidden="true"></i>
-        </div>
+  <TopStory>
+    <section class="nine prism" id="prism">
+      <div class="nine-intro measure">
+        <h2>Nine things, one at a time.</h2>
+        <p class="lede">
+          Same lens, nine verdicts. Walk the hall from the best real bargain today to the one that
+          ran away.
+        </p>
+        <p class="meta">
+          nine specimens · 1980&ndash;2024 · hung off the same line: above it beat inflation's pace,
+          below it didn't
+        </p>
       </div>
 
-      <div class="panels" id="panels">
-        {panels.map((p) => (
-          <article class="rpanel" data-good={p.gd.id} style={`--pvh:${p.vh};--good:${p.color}`}>
-            <div class="rp-inner">
-              <div class="rp-head">
-                <span class="rp-emoji">{p.emoji}</span>
-                <span class="rp-name">{p.gd.label}</span>
+      <div class="pr-scroll" id="prScroll">
+        <div class="pr-stage" id="prStage">
+          <div class="pr-hall" id="prHall" aria-hidden="true">
+            <div class="pr-rule" id="prRule"></div>
+            {nine.map(({ it, i }) => (
+              <div class="pr-spec" id={`prSpec${i}`} data-i={i} data-far
+                   style={`--good:${it.color}; --lift:${it.lift.toFixed(3)}; --xk:${12 + (i % 2) * 26}`}>
+                <figure class="nine-obj">
+                  <span class="nine-emoji">{it.emoji}</span>
+                </figure>
               </div>
-              <svg class="rp-viz" viewBox={`0 0 ${LW} ${LH}`} role="img" aria-hidden="true">
-                <line class="rp-base" x1={lPL} y1={p.baseY} x2={lPR} y2={p.baseY} />
-                <text class="rp-baselbl mono" x={lPR} y={p.baseY - 6} text-anchor="end">100 · kept pace</text>
-                {p.area && <path class="rp-area" d={p.area} fill={p.color} />}
-                <path class="rline" d={p.d} fill="none" stroke={p.color} />
-                {p.end && <circle class="rp-dot" cx={p.end.x} cy={p.end.y} r="6" fill={p.color} />}
+            ))}
+          </div>
+
+          <span class="nine-rulelbl pr-rulelbl" aria-hidden="true">kept pace with inflation</span>
+
+          <div class="pr-hud is-on" id="prHud" style={`--good:${first.it.color}; --good-ink:${first.it.colorInk}`}>
+            <p class="nine-rank"><span id="prRank">01</span> / 09 · real price today</p>
+            <p class="nine-name" id="prName">{first.it.label}</p>
+            <p class="nine-pct" id="prPct">{first.it.pct >= 0 ? '+' : '−'}{Math.abs(first.it.pct)}%</p>
+            <p class="nine-head" id="prHead">{first.it.head}</p>
+            <p class="nine-blurb" id="prBlurb">{first.it.blurb}</p>
+            <svg class="nine-spark" id="prSpark" viewBox="0 0 168 52" aria-hidden="true">
+              <line class="base" x1="0" y1={first.spark.baseY} x2="168" y2={first.spark.baseY} />
+              <path class="ln" d={first.spark.d} />
+              <circle class="dot" cx={first.spark.endX} cy={first.spark.endY} r="2.8" />
+            </svg>
+          </div>
+
+          <p class="pr-railtag" aria-hidden="true">100</p>
+          <ol class="pr-rail" id="prRail" aria-hidden="true">
+            {nine.map(({ it, i }) => (
+              <li data-i={i} data-side={it.rise ? 'up' : 'down'}
+                  style={`--good:${it.color}; --w:${Math.abs(it.lift).toFixed(3)}`}><i></i></li>
+            ))}
+          </ol>
+
+          <p class="pr-hint" aria-hidden="true">scroll ↓</p>
+        </div>
+      </div>
+
+      <ol class="nine-static">
+        {nine.map(({ it, i, spark }) => (
+          <li style={`--good:${it.color}; --good-ink:${it.colorInk}`}>
+            <figure class="nine-obj">
+              <span class="nine-emoji" aria-hidden="true">{it.emoji}</span>
+            </figure>
+            <div>
+              <p class="nine-rank">{String(i + 1).padStart(2, '0')} / 09 · real price today</p>
+              <p class="nine-name">{it.label}</p>
+              <p class="nine-pct">{it.pct >= 0 ? '+' : '−'}{Math.abs(it.pct)}%</p>
+              <p class="nine-head">{it.head}</p>
+              <p class="nine-blurb">{it.blurb}</p>
+              <svg class="nine-spark" viewBox={`0 0 ${spark.W} ${spark.H}`} aria-hidden="true">
+                <line class="base" x1="0" y1={spark.baseY} x2={spark.W} y2={spark.baseY} />
+                <path class="ln" d={spark.d} />
+                <circle class="dot" cx={spark.endX} cy={spark.endY} r="2.8" />
               </svg>
-              <div class="rp-read">
-                <span class="rp-pct mono" data-target={p.pct}>{p.pct >= 0 ? '+' : '−'}{Math.abs(p.pct)}%</span>
-                <span class="rp-sub mono">index {p.indexLabel} · 100 = 1980</span>
-              </div>
-              <p class="rp-blurb" set:html={p.blurb.html} />
-              {p.blurb.note && <p class="rp-note">{p.blurb.note}</p>}
             </div>
-          </article>
+          </li>
         ))}
-      </div>
+      </ol>
     </section>
-  </main>
-
-  <footer class="method measure">
-    <p class="verdict">The things you can choose got cheaper. The things you can't opt out of rose fastest.</p>
-    <p class="credit">Source: {data.meta.sourceCredit}</p>
-    <p class="foot">
-      Real price = each item's CPI (or average price) divided by all-items CPI-U, rebased to 100 at 1980
-      (childcare at 1991, its first full year). Deflator: {data.meta.deflatorLabel}.
-    </p>
-  </footer>
-
+  </TopStory>
+  <Footer />
   <script>
     import '../scripts/scroll.ts';
-    import '../scripts/ranking.ts';
+    import '../scripts/prism.ts';
   </script>
 </Base>
