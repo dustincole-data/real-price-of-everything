@@ -163,7 +163,10 @@
   .pr-rail li[data-side='down'] i { height: calc(2px + var(--w) * 14px); }
 }
 
+/* the hall itself still runs under reduced motion — see prism.ts. What goes is everything that
+   moves without the finger: the floating hint, the HUD's entrance, the rail's highlight tween. */
 @media (prefers-reduced-motion: reduce) {
   .pr-hint { animation: none; }
   .pr-hud { transition: none; }
+  .pr-rail i { transition: none; }
 }

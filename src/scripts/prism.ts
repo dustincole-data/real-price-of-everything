@@ -2,7 +2,12 @@
 // Scroll dollies a CSS-3D camera down a white hall of nine glass specimens, each hung off the same
 // dashed 100 line the top chart draws. No WebGL and no bloom pass: on paper, depth comes from
 // perspective plus fading into the paper itself, which is cheaper, sharper and works on a phone.
-// Enhancement only — without JS or under reduced-motion the authored gallery carries all nine.
+// Enhancement only — without JS the authored gallery carries all nine.
+// Reduced motion still walks the hall: the camera only ever moves with the finger, and that is the
+// content, not decoration. Bailing here left a phone with Reduce Motion on — a common setting —
+// with no hall, no rail and nothing to tap. Same call the top chart's driver already makes; what
+// gets dropped below is the motion that runs on its own (the eased dolly, the counting number,
+// the smooth-scrolled jump), never the scroll-coupled part.
 import { ITEMS, sparkPath } from '../lib/items.ts';
 
 const section = document.getElementById('prism');
@@ -11,7 +16,7 @@ const stage = document.getElementById('prStage');
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const flat = location.search.includes('flat'); // escape hatch: force the authored gallery
 
-if (section && scroll && stage && !reduced && !flat) init(section, scroll, stage);
+if (section && scroll && stage && !flat) init(section, scroll, stage);
 
 function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
   const N = ITEMS.length;
@@ -78,8 +83,8 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
     raf = 0;
     // time-based easing, so a throttled tab or a slow phone catches up instead of crawling
     const dt = Math.min(200, last ? now - last : 16.7); last = now;
-    cur += (tgt - cur) * (1 - Math.pow(0.89, dt / 16.7));
-    if (Math.abs(tgt - cur) < 0.0002) cur = tgt;
+    cur += reduced ? tgt - cur : (tgt - cur) * (1 - Math.pow(0.89, dt / 16.7));
+    if (reduced || Math.abs(tgt - cur) < 0.0002) cur = tgt;
 
     const { z: camZ, at } = dolly(cur);
 
@@ -99,8 +104,8 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
     setActive(at);
     section.toggleAttribute('data-walking', cur > 0.02);
     if (shown !== target) {
-      shown += (target - shown) * 0.18;
-      if (Math.abs(target - shown) < 0.5) shown = target;
+      shown += reduced ? target - shown : (target - shown) * 0.18;
+      if (reduced || Math.abs(target - shown) < 0.5) shown = target;
       const v = Math.round(shown);
       el.pct.textContent = `${v >= 0 ? '+' : '−'}${Math.abs(v)}%`;
     }
@@ -122,7 +127,7 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
     const total = scroll.offsetHeight - stage.offsetHeight;
     const p = i >= N - 1 ? 1 : (i + HOLD / 2) / (N - 1);
     const top = window.scrollY + scroll.getBoundingClientRect().top + total * p;
-    window.scrollTo({ top, behavior: 'smooth' });
+    window.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
   });
 
   window.addEventListener('scroll', () => { tgt = progress(); schedule(); }, { passive: true });
