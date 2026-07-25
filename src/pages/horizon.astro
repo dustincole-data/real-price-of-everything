@@ -1,0 +1,50 @@
+---
+import Base from '../layouts/Base.astro';
+import TopStory from '../components/TopStory.astro';
+import Footer from '../components/Footer.astro';
+import { ITEMS, sparkPath } from '../lib/items.ts';
+import '../styles/horizon.css';
+
+const panels = ITEMS.map((it, i) => ({ it, i, spark: sparkPath(it.real, 190, 58) }));
+---
+<Base>
+  <TopStory>
+    <section class="horizon" id="horizon" aria-label="The nine everyday things as a horizontal filmstrip — best real deal today to worst.">
+      <div class="hz-intro">
+        <p class="k">The nine, one by one</p>
+        <h2>Nine things. Nine trajectories.</h2>
+        <p>Keep scrolling — the tide's nine pieces slide past one at a time, from the best real bargain today to the one that ran away.</p>
+      </div>
+      <div class="hz-scroll" id="hzScroll">
+        <div class="hz-stage" id="hzStage">
+          <div class="hz-track" id="hzTrack">
+            {panels.map(({ it, i, spark }) => (
+              <article class="hz-panel" data-i={i} style={`--good:${it.color}`}>
+                <div class="hz-orb" aria-hidden="true"></div>
+                <div class="hz-txt">
+                  <div class="hz-idx">{String(i + 1).padStart(2, '0')} / 09 · real price today</div>
+                  <h3 class="hz-name">{it.label}</h3>
+                  <div class="hz-pct" data-target={it.pct}>{it.pct >= 0 ? '+' : '−'}{Math.abs(it.pct)}%</div>
+                  <p class="hz-blurb">{it.blurb}</p>
+                  <svg class="hz-spark" viewBox={`0 0 ${spark.W} ${spark.H}`} aria-hidden="true">
+                    <line class="base" x1="0" y1={spark.baseY} x2={spark.W} y2={spark.baseY} />
+                    <path class="ln" d={spark.d} />
+                    <circle class="dot" cx={spark.endX} cy={spark.endY} r="2.8" />
+                  </svg>
+                </div>
+                <figure class="hz-fig"><img src={`/obj/${it.id}.png`} alt={`A glowing crystalline ${it.label}`} width="1024" height="1024" loading="lazy" /></figure>
+              </article>
+            ))}
+          </div>
+          <div class="hz-hint" aria-hidden="true">scroll →</div>
+          <div class="hz-progress" aria-hidden="true"><i id="hzBar"></i></div>
+        </div>
+      </div>
+    </section>
+  </TopStory>
+  <Footer />
+  <script>
+    import '../scripts/scroll.ts';
+    import '../scripts/horizon.ts';
+  </script>
+</Base>

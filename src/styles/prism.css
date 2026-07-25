@@ -67,8 +67,7 @@
 .prism-fallback li:nth-child(even) { direction: rtl; }
 .prism-fallback li:nth-child(even) > * { direction: ltr; }
 .pf-fig { margin: 0; }
-/* screen blend drops the crystals' black backdrop so they float on the void, no square seam */
-.pf-fig img { width: 100%; height: auto; display: block; mix-blend-mode: screen; filter: drop-shadow(0 0 46px color-mix(in oklch, var(--good) 40%, transparent)); }
+.pf-fig img { width: 100%; height: auto; display: block; filter: drop-shadow(0 0 46px color-mix(in oklch, var(--good) 40%, transparent)); }
 .pf-head { font-family: var(--disp); font-weight: 700; font-size: clamp(1.4rem,1.1rem+1.5vw,2.1rem); color: var(--good); letter-spacing: -0.02em; }
 .pf-pct { font-family: var(--font-mono); font-weight: 500; font-size: clamp(2.4rem,1.6rem+4vw,4rem); color: var(--good); letter-spacing: -0.04em; line-height: 1; margin: 0.2rem 0; }
 .pf-blurb { color: var(--muted); line-height: 1.6; max-width: 42ch; }

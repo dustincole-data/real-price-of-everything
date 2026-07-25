@@ -1,0 +1,42 @@
+---
+import Base from '../layouts/Base.astro';
+import TopStory from '../components/TopStory.astro';
+import Footer from '../components/Footer.astro';
+import { ITEMS, sparkPath } from '../lib/items.ts';
+import '../styles/strata.css';
+
+const chapters = ITEMS.map((it, i) => ({ it, i, spark: sparkPath(it.real, 180, 56) }));
+---
+<Base>
+  <TopStory>
+    <section class="strata" id="strata" aria-label="The nine everyday things, one chapter each — best real deal today to worst.">
+      <div class="st-intro">
+        <p class="k">The nine, one by one</p>
+        <h2>Same lens. <em>Nine verdicts.</em></h2>
+      </div>
+      {chapters.map(({ it, i, spark }) => (
+        <article class="st-ch" data-i={i} style={`--good:${it.color}`}>
+          <div class="st-orb" aria-hidden="true"></div>
+          <figure class="st-fig"><img src={`/obj/${it.id}.png`} alt={`A glowing crystalline ${it.label}`} width="1024" height="1024" loading="lazy" /></figure>
+          <div class="st-txt">
+            <div class="st-rank">{String(i + 1).padStart(2, '0')} / 09 · real price today</div>
+            <h3 class="st-name">{it.label}</h3>
+            <div class="st-pct" data-target={it.pct}>{it.pct >= 0 ? '+' : '−'}{Math.abs(it.pct)}%</div>
+            <p class="st-blurb">{it.blurb}</p>
+            <svg class="st-spark" viewBox={`0 0 ${spark.W} ${spark.H}`} aria-hidden="true">
+              <line class="base" x1="0" y1={spark.baseY} x2={spark.W} y2={spark.baseY} />
+              <path class="ln" d={spark.d} />
+              <circle class="dot" cx={spark.endX} cy={spark.endY} r="2.8" />
+            </svg>
+          </div>
+        </article>
+      ))}
+      <div class="st-rail" id="stRail" aria-hidden="true"></div>
+    </section>
+  </TopStory>
+  <Footer />
+  <script>
+    import '../scripts/scroll.ts';
+    import '../scripts/strata.ts';
+  </script>
+</Base>
