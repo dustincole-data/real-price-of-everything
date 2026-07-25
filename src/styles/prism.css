@@ -1,0 +1,87 @@
+/* ===== Variation 1 · PRISM — the crystalline vault (dark WebGL museum of the 9 items) ===== */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap');
+
+.prism {
+  --void: oklch(0.13 0.024 264);
+  --void-2: oklch(0.17 0.03 264);
+  --lite: oklch(0.97 0.008 264);
+  --muted: oklch(0.74 0.02 264);
+  --faint: oklch(0.58 0.02 264);
+  --hair: oklch(0.32 0.02 264);
+  --disp: 'Syne', system-ui, sans-serif;
+  position: relative;
+  background: var(--void);
+  color: var(--lite);
+  isolation: isolate;
+}
+/* fade in from the light page above and back out to the light footer below */
+.prism::before,
+.prism::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 22vh; z-index: 3; pointer-events: none;
+}
+.prism::before { top: 0; background: linear-gradient(var(--paper), transparent); }
+.prism::after { bottom: 0; background: linear-gradient(transparent, var(--paper)); }
+
+/* dark intro band that sets the scene before the sticky stage */
+.prism-intro { position: relative; z-index: 4; text-align: center; padding: clamp(5rem, 16vh, 9rem) 1.25rem clamp(2rem, 6vh, 4rem); }
+.prism-intro .eyebrow { font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.08em; color: var(--faint); text-transform: uppercase; }
+.prism-intro h2 { font-family: var(--disp); font-weight: 800; font-size: clamp(2rem, 1.4rem + 3vw, 3.6rem); letter-spacing: -0.03em; margin: 0.6rem auto 0; max-width: 18ch; line-height: 1.04; }
+.prism-intro p { color: var(--muted); max-width: 46ch; margin: 1rem auto 0; font-size: 1.05rem; line-height: 1.55; }
+
+/* the scroll driver + sticky stage */
+.prism-scroll { position: relative; }
+.prism-stage { position: sticky; top: 0; height: 100dvh; overflow: clip; }
+#prismCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; }
+
+/* HUD overlay — the active item's story, synced to scroll */
+.prism-hud { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.ph-body {
+  position: absolute; left: clamp(1.25rem, 5vw, 5rem); bottom: clamp(1.5rem, 7vh, 5rem);
+  width: min(30rem, 82vw); opacity: 0; transform: translateY(14px);
+}
+.ph-body.is-on { opacity: 1; transform: none; transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1); }
+.ph-name { display: flex; align-items: baseline; gap: 0.6rem; font-family: var(--disp); font-weight: 700; }
+.ph-name .n { font-size: clamp(1.6rem, 1.2rem + 2vw, 2.6rem); letter-spacing: -0.02em; color: var(--good, var(--lite)); }
+.ph-rank { font-family: var(--font-mono); font-size: 0.78rem; color: var(--faint); letter-spacing: 0.02em; }
+.ph-pct { font-family: var(--font-mono); font-weight: 500; font-size: clamp(3rem, 2rem + 6vw, 5.6rem); line-height: 0.95; letter-spacing: -0.04em; color: var(--good, var(--lite)); margin: 0.4rem 0 0.1rem; text-shadow: 0 0 40px color-mix(in oklch, var(--good) 55%, transparent); }
+.ph-head { font-family: var(--disp); font-weight: 600; font-size: 1.15rem; color: var(--lite); letter-spacing: -0.01em; }
+.ph-blurb { color: var(--muted); font-size: 1rem; line-height: 1.55; margin-top: 0.5rem; max-width: 40ch; }
+.ph-spark { margin-top: 1rem; width: 168px; height: 52px; display: block; overflow: visible; }
+.ph-spark .base { stroke: var(--hair); stroke-width: 1; stroke-dasharray: 3 4; }
+.ph-spark .ln { fill: none; stroke: var(--good, var(--lite)); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 6px color-mix(in oklch, var(--good) 70%, transparent)); }
+.ph-spark .dot { fill: var(--good, var(--lite)); }
+.ph-spark .lbl { font-family: var(--font-mono); font-size: 9px; fill: var(--faint); }
+
+/* wayfinding: nine ticks up the right edge */
+.ph-nav { position: absolute; right: clamp(0.9rem, 2.4vw, 2rem); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 0.7rem; }
+.ph-nav i { width: 8px; height: 8px; border-radius: 50%; background: var(--hair); transition: background .3s ease, transform .3s ease, box-shadow .3s ease; }
+.ph-nav i.on { background: var(--good, var(--lite)); transform: scale(1.5); box-shadow: 0 0 14px color-mix(in oklch, var(--good) 80%, transparent); }
+.ph-nav i.past { background: var(--faint); }
+
+.prism-scrollhint { position: absolute; left: 50%; bottom: 1.5rem; transform: translateX(-50%); z-index: 2; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; color: var(--faint); text-transform: uppercase; animation: phFloat 2.4s ease-in-out infinite; }
+@keyframes phFloat { 0%,100% { transform: translate(-50%, 0); opacity: .55; } 50% { transform: translate(-50%, 6px); opacity: 1; } }
+
+/* ---- gating: WebGL only when the engine is live; otherwise the static gallery ---- */
+.prism-fallback { list-style: none; margin: 0 auto; padding: clamp(2rem,6vh,4rem) 1.25rem clamp(4rem,10vh,7rem); max-width: 62rem; display: grid; gap: clamp(2.5rem, 6vh, 5rem); position: relative; z-index: 4; }
+.prism-fallback li { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.1fr); gap: clamp(1rem,4vw,3rem); align-items: center; }
+.prism-fallback li:nth-child(even) { direction: rtl; }
+.prism-fallback li:nth-child(even) > * { direction: ltr; }
+.pf-fig { margin: 0; }
+/* screen blend drops the crystals' black backdrop so they float on the void, no square seam */
+.pf-fig img { width: 100%; height: auto; display: block; mix-blend-mode: screen; filter: drop-shadow(0 0 46px color-mix(in oklch, var(--good) 40%, transparent)); }
+.pf-head { font-family: var(--disp); font-weight: 700; font-size: clamp(1.4rem,1.1rem+1.5vw,2.1rem); color: var(--good); letter-spacing: -0.02em; }
+.pf-pct { font-family: var(--font-mono); font-weight: 500; font-size: clamp(2.4rem,1.6rem+4vw,4rem); color: var(--good); letter-spacing: -0.04em; line-height: 1; margin: 0.2rem 0; }
+.pf-blurb { color: var(--muted); line-height: 1.6; max-width: 42ch; }
+
+.prism[data-prism-js] .prism-fallback { display: none; }
+.prism:not([data-prism-js]) .prism-scroll { display: none; }
+
+@media (max-width: 720px) {
+  .prism-fallback li, .prism-fallback li:nth-child(even) { grid-template-columns: 1fr; direction: ltr; }
+  .ph-body { left: 1.1rem; right: 1.1rem; width: auto; bottom: 3.4rem; }
+  .ph-nav { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prism-scrollhint { animation: none; }
+  .ph-body.is-on { transition: none; }
+}

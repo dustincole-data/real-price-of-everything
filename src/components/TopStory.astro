@@ -1,0 +1,96 @@
+---
+// The beloved top of the page — masthead + hero (beat 1) + the "Drain the Tide" sticky stage
+// (beats 2–3). IDENTICAL to the live site; the variation pages reuse it verbatim and drop their
+// own after-section into the <slot/>. Driven by scroll.ts (imported by each page).
+import seriesData from '../data/series.json';
+import type { SeriesData, Good } from '../lib/types.ts';
+
+const data = seriesData as unknown as SeriesData;
+const { latestYear } = data.meta;
+const g = (id: string) => data.goods.find((x) => x.id === id) as Good;
+const stamp = g('stamp');
+const gas = g('gas');
+const eggs = g('eggs');
+
+const EMOJI: Record<string, string> = {
+  tv: '📺', clothing: '👕', gas: '⛽', eggs: '🥚', stamp: '✉️',
+  rent: '🏠', childcare: '🍼', healthcare: '🏥', college: '🎓',
+};
+const sky = [...data.goods].sort((a, b) => a.realIndexToday - b.realIndexToday);
+const SW = 1000, SH = 560, SDMAX = 380;
+const sPL = 46, sPR = SW - 22, sPT = Math.round(SH * 0.09), sPB = SH - 40, sPW = sPR - sPL;
+const syFor = (v: number) => sPB - (Math.max(0, Math.min(SDMAX, v)) / SDMAX) * (sPB - sPT);
+const sSlot = sPW / sky.length;
+const sBarW = Math.min(56, sSlot * 0.52);
+const sBaseY = syFor(100);
+const skyBars = sky.map((gd, i) => {
+  const x = sPL + (i + 0.5) * sSlot;
+  const y = syFor(gd.realIndexToday);
+  const pct = Math.round(gd.realIndexToday - 100);
+  return { gd, x, y, h: sPB - y, pct, color: gd.pole === 'up' ? 'var(--pole-up)' : 'var(--pole-down)', emoji: EMOJI[gd.id] };
+});
+---
+<header class="masthead">
+  <span class="title">The Real Price of Everything</span>
+  <span class="src">1980&ndash;{latestYear} · real, inflation-adjusted</span>
+</header>
+
+<main>
+  <!-- ===== BEAT 1 — the shared lie ===== -->
+  <section class="hero measure">
+    <p class="kicker">Everything costs more than it used to.</p>
+    <h1>The Real Price of Everything</h1>
+    <p class="lede">A stamp. A gallon of gas. A dozen eggs. The numbers only ever go up.</p>
+    <div class="nominal-wall">
+      <div class="stat"><span class="k">A first-class stamp</span><span class="v">{stamp.nominalThen}<span class="arrow">→</span>{stamp.nominalNow}</span></div>
+      <div class="stat"><span class="k">A gallon of gas</span><span class="v">{gas.nominalThen}<span class="arrow">→</span>{gas.nominalNow}</span></div>
+      <div class="stat"><span class="k">A dozen eggs</span><span class="v">{eggs.nominalThen}<span class="arrow">→</span>{eggs.nominalNow}</span></div>
+    </div>
+    <p class="go">Scroll ↓ and watch the single story come apart.</p>
+  </section>
+
+  <p class="sr-only">
+    What follows is an inflation-adjusted price chart that transforms as you scroll, indexed to 100 in 1980.
+    First it teaches the idea on a single first-class stamp: its price climbed in dollars, but once you subtract
+    inflation the stamp barely moved. Then it applies that lens to nine everyday things at once, and they split
+    in two. The things you can choose fall below the inflation line or hold near it: televisions and clothing drop
+    steeply, gas and eggs swing but land near or below where they began, and a stamp holds. The things you cannot
+    opt out of rise far above it: college tuition climbs the most, then healthcare, then childcare, then rent.
+  </p>
+
+  <!-- ===== DRAIN THE TIDE — sticky stage, beats 2–3 ===== -->
+  <div class="scrolly" id="scrolly">
+    <div class="stage" id="stage">
+      <div class="vizwrap gridground">
+        <svg id="viz" role="img" aria-hidden="true"></svg>
+        <svg id="skyline" class="chart" viewBox={`0 0 ${SW} ${SH}`} role="img"
+             aria-label="Nine everyday things, real price indexed to 100 in 1980. Services rise far above the inflation baseline; goods fall below or hold near it.">
+          {[0, 100, 200, 300].map((v) => {
+            const y = syFor(v);
+            return (<g><line class="rule" x1={sPL} y1={y} x2={sPR} y2={y} /><text class="tick" x={sPL - 8} y={y + 4} text-anchor="end">{v}</text></g>);
+          })}
+          <line class="base" x1={sPL} y1={sBaseY} x2={sPR} y2={sBaseY} />
+          <text class="baselbl" x={sPL} y={sBaseY - 6}>kept pace with inflation</text>
+          {skyBars.map((b) => (
+            <g>
+              <rect x={b.x - sBarW / 2} y={b.y} width={sBarW} height={b.h} rx="2.5" fill={b.color} fill-opacity="0.9" />
+              <text class="emoji" x={b.x} y={b.y - 16} font-size="20">{b.emoji}</text>
+              <text class="val" x={b.x} y={b.y - 32} font-size="12" fill={b.color}>{b.pct >= 0 ? '+' : '−'}{Math.abs(b.pct)}%</text>
+              <text class="glab" x={b.x} y={sPB + 19} font-size="11">{b.gd.label}</text>
+            </g>
+          ))}
+        </svg>
+      </div>
+      <div class="capbox" id="caps">
+        <p class="cap" data-in="0.00" data-out="0.075">A first-class stamp cost <b>{stamp.nominalThen}</b> in 1980.</p>
+        <p class="cap" data-in="0.075" data-out="0.15">In dollars it climbed to <b>{stamp.nominalNow}</b> — like everything did. That rise is inflation. <span class="soft">The shared tide.</span></p>
+        <p class="cap" data-in="0.15" data-out="0.235">Drain the inflation back out and the stamp <b>barely moved.</b> <span class="soft">It didn't get pricier — your dollar got smaller.</span></p>
+        <p class="cap lead" data-in="0.235" data-out="0.30">Now do it to <b>everything at once.</b></p>
+        <p class="cap" data-in="0.30" data-out="0.385">Every everyday price rides the same tide up. <b>Looks like one story.</b></p>
+        <p class="cap" data-in="0.385" data-out="0.46">Play the years back and drain the inflation, and the one story <b>splits in two.</b></p>
+      </div>
+    </div>
+  </div>
+
+  <slot />
+</main>

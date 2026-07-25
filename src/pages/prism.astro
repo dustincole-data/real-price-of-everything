@@ -1,0 +1,62 @@
+---
+import Base from '../layouts/Base.astro';
+import TopStory from '../components/TopStory.astro';
+import Footer from '../components/Footer.astro';
+import { ITEMS, sparkPath } from '../lib/items.ts';
+import '../styles/prism.css';
+
+const fallback = ITEMS.map((it) => ({ it, spark: sparkPath(it.real) }));
+---
+<Base>
+  <TopStory>
+    <section class="prism" id="prism" aria-label="Nine everyday things, one at a time — best real deal today to worst.">
+      <div class="prism-intro">
+        <p class="eyebrow">The nine, one by one</p>
+        <h2>Same lens, nine verdicts.</h2>
+        <p>Below the tide, each thing waits as a single crystal — lit by what really happened to its price. Scroll down through them, from the best real bargain today to the one that ran away.</p>
+      </div>
+
+      <div class="prism-scroll" id="prismScroll">
+        <div class="prism-stage" id="prismStage">
+          <canvas id="prismCanvas"></canvas>
+          <div class="prism-hud" aria-hidden="true">
+            <div class="ph-body" id="phBody">
+              <div class="ph-name"><span class="n" id="phName"></span><span class="ph-rank" id="phRank"></span></div>
+              <div class="ph-pct" id="phPct"></div>
+              <div class="ph-head" id="phHead"></div>
+              <p class="ph-blurb" id="phBlurb"></p>
+              <svg class="ph-spark" id="phSpark" viewBox="0 0 150 46" preserveAspectRatio="xMidYMid meet"></svg>
+            </div>
+            <div class="ph-nav" id="phNav"></div>
+          </div>
+          <div class="prism-scrollhint">scroll</div>
+        </div>
+      </div>
+
+      <!-- no-JS / reduced-motion / no-WebGL: the same nine, as a static crystalline gallery -->
+      <ol class="prism-fallback">
+        {fallback.map(({ it, spark }, i) => (
+          <li style={`--good:${it.color}`}>
+            <figure class="pf-fig"><img src={`/obj/${it.id}.png`} alt={`A glowing crystalline ${it.label}`} width="1024" height="1024" loading="lazy" /></figure>
+            <div class="pf-txt">
+              <div class="ph-rank">{String(i + 1).padStart(2, '0')} · real price today</div>
+              <div class="pf-head">{it.label}</div>
+              <div class="pf-pct">{it.pct >= 0 ? '+' : '−'}{Math.abs(it.pct)}%</div>
+              <p class="pf-blurb">{it.blurb}</p>
+              <svg class="ph-spark" viewBox={`0 0 ${spark.W} ${spark.H}`} aria-hidden="true">
+                <line class="base" x1="0" y1={spark.baseY} x2={spark.W} y2={spark.baseY} />
+                <path class="ln" d={spark.d} />
+                <circle class="dot" cx={spark.endX} cy={spark.endY} r="2.6" />
+              </svg>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  </TopStory>
+  <Footer />
+  <script>
+    import '../scripts/scroll.ts';
+    import '../scripts/prism.ts';
+  </script>
+</Base>

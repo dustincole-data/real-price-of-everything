@@ -13,8 +13,10 @@
     "icons": "node --experimental-strip-types scripts/icons.ts"
   },
   "dependencies": {
+    "@types/three": "^0.185.1",
     "astro": "^5.0.0",
-    "gsap": "^3.12.5"
+    "gsap": "^3.12.5",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
