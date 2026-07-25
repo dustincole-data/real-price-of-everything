@@ -218,11 +218,16 @@ function renderCaps(p: number) {
 function render(p: number) { renderBars(p); renderCaps(p); }
 
 /* ---- scroll drive (rAF + light lerp smoothing) ---- */
+// The stage now ends at the split-settle: beats 2–3 (teach + split) fill the whole scrolly,
+// then the per-good gallery (#ranking) takes over below. Raw scroll [0,1] maps to [0,SPLIT_END]
+// so teach + split render EXACTLY as before (their windows/thresholds untouched); the old tour +
+// verdict beats — removed from the DOM — are simply never reached.
+const SPLIT_END = 0.5;
 let curP = 0, tgtP = 0, ticking = false;
 function computeProgress(): number {
   const r = scrolly!.getBoundingClientRect();
   const total = scrolly!.offsetHeight - stage!.offsetHeight;
-  return clamp(-r.top / (total || 1));
+  return clamp(-r.top / (total || 1)) * SPLIT_END;
 }
 function frame() {
   // reduced-motion: snap straight to the scroll position (no motion independent of the finger);

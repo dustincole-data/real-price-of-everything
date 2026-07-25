@@ -33,6 +33,81 @@ const skyBars = sky.map((gd, i) => {
     emoji: EMOJI[gd.id],
   };
 });
+
+// ===== "The Ranking" per-good gallery (issue 09) =====
+// Same ascending order as the skyline: best real deal today (TV) → worst (college).
+const rank = sky;
+const col = (pole: string) => (pole === 'up' ? 'var(--pole-up)' : 'var(--pole-down)');
+
+// ---- docked strip: the whole staircase in miniature + 100 baseline ----
+const STW = 1000, STH = 128, STDMAX = 380;
+const stPL = 18, stPR = STW - 18, stPT = 22, stPB = STH - 14, stPW = stPR - stPL;
+const stY = (v: number) => stPB - (Math.max(0, Math.min(STDMAX, v)) / STDMAX) * (stPB - stPT);
+const stSlot = stPW / rank.length;
+const stBarW = Math.min(24, stSlot * 0.46);
+const stBaseY = stY(100);
+const stripBars = rank.map((gd, i) => {
+  const x = stPL + (i + 0.5) * stSlot;
+  const y = stY(gd.realIndexToday);
+  return { gd, x: x - stBarW / 2, w: stBarW, y, h: stPB - y, color: col(gd.pole) };
+});
+
+// ---- per-good hero line: the good's real 1980→2024, framed tight to its own range with
+//      the 100 baseline marked. (Cross-good comparison is carried by the docked strip; each
+//      panel frames its own line so the texture — TV plunge, college climb, eggs jitter — fills
+//      the hero band instead of leaving dead space on a shared 0–380 scale.) ----
+const LW = 1000, LH = 280;
+const lPL = 14, lPR = LW - 14, lPT = 24, lPB = LH - 20;
+const NY = data.meta.years.length;
+const lX = (i: number) => lPL + (i / (NY - 1)) * (lPR - lPL);
+const lineFrame = (real: (number | null)[]) => {
+  const vals = real.filter((v): v is number => v != null);
+  let lo = Math.min(100, ...vals), hi = Math.max(100, ...vals);
+  const pad = (hi - lo) * 0.14 || 10;
+  lo -= pad; hi += pad;
+  const yv = (v: number) => lPB - ((v - lo) / (hi - lo)) * (lPB - lPT);
+  const pts: { x: number; y: number }[] = [];
+  real.forEach((v, i) => { if (v != null) pts.push({ x: lX(i), y: yv(v) }); });
+  return { pts, baseY: yv(100) };
+};
+const lineD = (p: { x: number; y: number }[]) =>
+  p.map((q, i) => `${i ? 'L' : 'M'}${q.x.toFixed(1)} ${q.y.toFixed(1)}`).join(' ');
+const areaD = (p: { x: number; y: number }[]) =>
+  p.length ? `M${p.map((q) => `${q.x.toFixed(1)} ${q.y.toFixed(1)}`).join('L')}L${p[p.length - 1].x.toFixed(1)} ${lPB}L${p[0].x.toFixed(1)} ${lPB}Z` : '';
+
+// blurbs — reuse the per-good captions authored for the old tours (stamp is newly written)
+const BLURBS: Record<string, { html: string; note?: string }> = {
+  tv: { html: 'A television falls <b>off the bottom.</b> The same money buys vastly more TV.', note: 'Constant-quality: a 2024 4K set measured against a 1960 console.' },
+  clothing: { html: 'Clothing gets <b>quietly cheaper,</b> decade after decade.' },
+  gas: { html: 'Gas swings with every crisis and boom — but in real terms a gallon costs <b>less</b> than it did in 1980.' },
+  eggs: { html: 'Eggs are the noisy one — bird-flu spikes — but land <b>about where they began.</b>' },
+  stamp: { html: 'A first-class stamp <b>barely moved</b> in real terms. It didn’t get pricier — your dollar got smaller.' },
+  rent: { html: 'Rent is the one you <b>can’t opt out of.</b> It rises across the whole window.', note: 'CPI rent of a primary residence.' },
+  childcare: { html: 'Childcare arrives late, around 1990, and <b>climbs the fastest of all.</b>' },
+  healthcare: { html: 'Medical care never stops rising. Not a spike — <b>a slope that steepens.</b>' },
+  college: { html: 'College tuition <b>climbs, and keeps climbing</b> — up about 248% in real terms.' },
+};
+
+// weighted scroll length ∝ |real − 100|: TV & college get long cinematic descents,
+// the kept-pace middle (eggs, stamp) flicks past fast. Each card sticky-dwells at center for
+// (panel − viewport); the floor keeps the card ≈ a viewport tall so it centers cleanly, then
+// deviation buys the extra dwell on top. Tune here (open item, decided on the anchor).
+const MAXDEV = Math.max(...rank.map((gd) => Math.abs(gd.realIndexToday - 100)));
+const MINVH = 94, MAXVH = 176;
+const panelData = rank.map((gd) => {
+  const { pts, baseY } = lineFrame(gd.real);
+  const dev = Math.abs(gd.realIndexToday - 100);
+  const pct = Math.round(gd.realIndexToday - 100);
+  const v = gd.realIndexToday;
+  return {
+    gd, emoji: EMOJI[gd.id], color: col(gd.pole), pct, baseY,
+    d: lineD(pts), area: areaD(pts), end: pts[pts.length - 1],
+    indexLabel: v < 10 ? v.toFixed(1) : String(Math.round(v)),
+    vh: Math.round(MINVH + (dev / MAXDEV) * (MAXVH - MINVH)),
+    blurb: BLURBS[gd.id],
+  };
+});
+const panels = panelData;
 ---
 <Base>
   <header class="masthead">
@@ -119,48 +194,64 @@ const skyBars = sky.map((gd, i) => {
           </p>
           <!-- handoff -->
           <p class="cap lead" data-in="0.235" data-out="0.30">Now do it to <b>everything at once.</b></p>
-          <!-- beat 3 — the split + year-play -->
+          <!-- beat 3 — the split + year-play (the last beat of the sticky stage;
+               the per-good gallery below now carries the good-by-good tour) -->
           <p class="cap" data-in="0.30" data-out="0.385">
             Every everyday price rides the same tide up. <b>Looks like one story.</b>
           </p>
           <p class="cap" data-in="0.385" data-out="0.46">
             Play the years back and drain the inflation, and the one story <b>splits in two.</b>
           </p>
-          <!-- beat 4 — abundance tour -->
-          <p class="cap" data-in="0.46" data-out="0.515" data-good="gas">
-            Gas swings with every crisis and boom — but in real terms a gallon costs <b>less</b> than it did in 1980.
-          </p>
-          <p class="cap" data-in="0.515" data-out="0.57" data-good="tv">
-            A television falls <b>off the bottom.</b> The same money buys vastly more TV.
-            <span class="note">Constant-quality: a 2024 4K set measured against a 1960 console.</span>
-          </p>
-          <p class="cap" data-in="0.57" data-out="0.62" data-good="clothing">
-            Clothing gets <b>quietly cheaper,</b> decade after decade.
-          </p>
-          <p class="cap" data-in="0.62" data-out="0.675" data-good="eggs">
-            Eggs are the noisy one — bird-flu spikes — but land <b>about where they began.</b>
-          </p>
-          <!-- beat 5 — the squeeze tour -->
-          <p class="cap" data-in="0.675" data-out="0.73" data-good="college">
-            College tuition <b>climbs, and keeps climbing</b> — up about 248% in real terms.
-          </p>
-          <p class="cap" data-in="0.73" data-out="0.785" data-good="healthcare">
-            Medical care never stops rising. Not a spike — <b>a slope that steepens.</b>
-          </p>
-          <p class="cap" data-in="0.785" data-out="0.835" data-good="rent">
-            Rent is the one you <b>can't opt out of.</b> It rises across the whole window.
-            <span class="note">CPI rent of a primary residence.</span>
-          </p>
-          <p class="cap" data-in="0.835" data-out="0.885" data-good="childcare">
-            Childcare arrives late, around 1990, and <b>climbs the fastest of all.</b>
-          </p>
-          <!-- beat 6 — the verdict -->
-          <p class="cap lead" data-in="0.885" data-out="1.001" data-final>
-            Nine everyday things, inflation stripped out. <b class="d">The things you can choose got cheaper.</b> <b class="u">The things you can't opt out of rose fastest.</b>
-          </p>
         </div>
       </div>
     </div>
+
+    <!-- ===== THE RANKING — per-good gallery, best real deal → worst ===== -->
+    <section class="ranking" id="ranking" aria-label="Each thing on its own, best real deal today to worst.">
+      <!-- docked strip: the whole staircase in miniature; a pin lights the current good.
+           Bars scale full-bleed (preserveAspectRatio=none); the pin + spotlight are HTML
+           overlays JS positions in px, so they stay crisp at any width. -->
+      <div class="strip" id="strip">
+        <span class="strip-tag mono">real price · 1980 = 100</span>
+        <div class="strip-inner" id="stripInner">
+          <div class="strip-band" id="stripBand" aria-hidden="true"></div>
+          <svg class="strip-svg" viewBox={`0 0 ${STW} ${STH}`} preserveAspectRatio="none" role="img"
+               aria-label="Miniature of the nine-bar real-price staircase, ascending from cheapest in real terms to most expensive.">
+            <line class="base" x1={stPL} y1={stBaseY} x2={stPR} y2={stBaseY} vector-effect="non-scaling-stroke" />
+            {stripBars.map((b) => (
+              <rect class="stbar" data-good={b.gd.id} x={b.x} y={b.y} width={b.w} height={b.h} fill={b.color} fill-opacity="0.9" />
+            ))}
+          </svg>
+          <i class="strip-pin" id="stripPin" aria-hidden="true"></i>
+        </div>
+      </div>
+
+      <div class="panels" id="panels">
+        {panels.map((p) => (
+          <article class="rpanel" data-good={p.gd.id} style={`--pvh:${p.vh};--good:${p.color}`}>
+            <div class="rp-inner">
+              <div class="rp-head">
+                <span class="rp-emoji">{p.emoji}</span>
+                <span class="rp-name">{p.gd.label}</span>
+              </div>
+              <svg class="rp-viz" viewBox={`0 0 ${LW} ${LH}`} role="img" aria-hidden="true">
+                <line class="rp-base" x1={lPL} y1={p.baseY} x2={lPR} y2={p.baseY} />
+                <text class="rp-baselbl mono" x={lPR} y={p.baseY - 6} text-anchor="end">100 · kept pace</text>
+                {p.area && <path class="rp-area" d={p.area} fill={p.color} />}
+                <path class="rline" d={p.d} fill="none" stroke={p.color} />
+                {p.end && <circle class="rp-dot" cx={p.end.x} cy={p.end.y} r="6" fill={p.color} />}
+              </svg>
+              <div class="rp-read">
+                <span class="rp-pct mono" data-target={p.pct}>{p.pct >= 0 ? '+' : '−'}{Math.abs(p.pct)}%</span>
+                <span class="rp-sub mono">index {p.indexLabel} · 100 = 1980</span>
+              </div>
+              <p class="rp-blurb" set:html={p.blurb.html} />
+              {p.blurb.note && <p class="rp-note">{p.blurb.note}</p>}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   </main>
 
   <footer class="method measure">
@@ -174,5 +265,6 @@ const skyBars = sky.map((gd, i) => {
 
   <script>
     import '../scripts/scroll.ts';
+    import '../scripts/ranking.ts';
   </script>
 </Base>

@@ -83,8 +83,8 @@ a { color: inherit; }
 .nominal-wall .stat .v .arrow { color: var(--ink-faint); margin: 0 0.35em; }
 .hero .go { margin-top: var(--sp-7); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-faint); }
 
-/* --- drain the tide: sticky stage --- */
-.scrolly { position: relative; height: 640vh; }
+/* --- drain the tide: sticky stage (ends at the split-settle; the gallery takes over below) --- */
+.scrolly { position: relative; height: 320vh; }
 :root:not([data-js-active]) .scrolly { height: auto; } /* no sticky travel without JS/motion */
 .stage {
   position: sticky; top: var(--mast);
@@ -122,6 +122,76 @@ a { color: inherit; }
 :root:not([data-js-active]) .capbox { min-height: 0; padding-top: var(--sp-5); }
 :root:not([data-js-active]) .cap { position: static; inset: auto; opacity: 1; transform: none; margin-bottom: var(--sp-4); }
 
+/* ===== The Ranking — per-good gallery (issue 09) ===== */
+:root { --strip-h: clamp(88px, 13vw, 132px); }
+.ranking { position: relative; }
+
+/* docked strip: slim sticky mini-staircase under the masthead */
+.strip {
+  position: sticky; top: var(--mast); z-index: var(--z-chiprail);
+  height: var(--strip-h);
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 0.3rem clamp(0.75rem, 3vw, 2rem) 0.45rem;
+  background: var(--paper); /* solid so an outgoing card can't ghost through the docked strip */
+  border-bottom: 1px solid var(--grid);
+}
+.strip-tag { font-size: 0.7rem; color: var(--ink-faint); letter-spacing: 0; margin-bottom: 3px; }
+.strip-inner { position: relative; flex: 1 1 auto; min-height: 0; }
+.strip-svg { display: block; width: 100%; height: 100%; }
+.strip-svg .base { stroke: var(--baseline); stroke-width: 1; stroke-dasharray: 4 4; }
+.strip-band {
+  position: absolute; top: 0; bottom: 0; left: 0; width: 0; border-radius: 3px;
+  background: color-mix(in oklch, var(--good, transparent) 16%, transparent);
+  opacity: 0; pointer-events: none;
+  transition: left .45s cubic-bezier(.4,0,.1,1), width .45s cubic-bezier(.4,0,.1,1), opacity .3s ease;
+}
+.strip-pin {
+  position: absolute; top: 0; left: 0; margin-left: -6px;
+  width: 0; height: 0; opacity: 0; pointer-events: none;
+  border-left: 6px solid transparent; border-right: 6px solid transparent;
+  border-top: 9px solid var(--good, var(--ink));
+  transform: translate(-100px, -100px); will-change: transform;
+  transition: transform .45s cubic-bezier(.4,0,.1,1), opacity .3s ease;
+}
+
+/* the panels — each good centered under the strip, dwelling for its weighted length */
+.panels { position: relative; }
+.rpanel { min-height: calc(var(--pvh) * 1vh); }
+.rp-inner {
+  position: sticky; top: calc(var(--mast) + var(--strip-h));
+  height: calc(100dvh - var(--mast) - var(--strip-h));
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: clamp(0.4rem, 1.4vh, 0.95rem);
+  padding: clamp(0.5rem, 2.4vh, 1.4rem) clamp(1rem, 4vw, 2rem); text-align: center;
+  background: var(--paper); /* opaque so each card cleanly covers the one it hands off from */
+}
+.rp-inner > * { width: 100%; max-width: 40rem; margin-inline: auto; }
+.rp-head { display: flex; align-items: center; justify-content: center; gap: 0.55rem; }
+.rp-emoji { font-size: clamp(1.9rem, 1.4rem + 2.2vw, 3rem); line-height: 1; }
+.rp-name { font-size: clamp(1.55rem, 1.2rem + 1.7vw, 2.5rem); font-weight: 600; letter-spacing: -0.02em; color: var(--good); }
+.rp-viz { display: block; width: 100%; max-width: 44rem; height: auto; overflow: visible; }
+.rp-base { stroke: var(--baseline); stroke-width: 1.25; stroke-dasharray: 4 4; }
+.rp-baselbl { font-size: 15px; fill: var(--ink-muted); paint-order: stroke; stroke: var(--paper); stroke-width: 3px; stroke-linejoin: round; }
+.rline { stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.rp-area { opacity: 0.14; }
+.rp-read { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.rp-pct { font-size: clamp(2.4rem, 1.7rem + 3.6vw, 4.5rem); font-weight: 600; line-height: 1; color: var(--good); letter-spacing: -0.03em; }
+.rp-sub { font-size: var(--fs-foot); color: var(--ink-muted); }
+.rp-blurb { font-size: clamp(1.02rem, 0.97rem + 0.5vw, 1.28rem); line-height: var(--lh-caption); color: var(--ink); max-width: 46ch; }
+.rp-blurb b { font-weight: 600; color: var(--good); }
+.rp-note { font-size: var(--fs-foot); color: var(--ink-muted); max-width: 44ch; margin-top: 0.15rem; }
+
+/* draw-in enhancements (only when the JS driver is live; content is authored-visible without it) */
+[data-rank-js] .rp-area { opacity: 0; transition: opacity 1s ease 0.15s; }
+[data-rank-js] .rpanel.is-drawn .rp-area { opacity: 0.14; }
+[data-rank-js] .rp-dot { opacity: 0; transition: opacity .4s ease .9s; }
+[data-rank-js] .rpanel.is-drawn .rp-dot { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  [data-rank-js] .rp-area { opacity: 0.14; transition: none; }
+  [data-rank-js] .rp-dot { opacity: 1; transition: none; }
+  .strip-pin, .strip-band { transition: none; }
+}
+
 /* --- method footer --- */
 .method { padding-block: var(--sp-8) var(--sp-9); border-top: 1px solid var(--grid); color: var(--ink-muted); }
 .method .verdict { color: var(--ink); font-size: clamp(1.3rem, 1.1rem + 1vw, 1.8rem); font-weight: 600; margin-bottom: var(--sp-5); text-wrap: balance; }
@@ -136,9 +206,9 @@ a { color: inherit; }
 :where(a, button, [tabindex]):focus-visible { outline: var(--focus-ring); outline-offset: 2px; border-radius: 3px; }
 
 /* --- responsive --- */
-@media (max-width: 1023px) { .scrolly { height: 600vh; } }
+@media (max-width: 1023px) { .scrolly { height: 300vh; } }
 @media (max-width: 639px) {
-  .scrolly { height: 560vh; }
+  .scrolly { height: 280vh; }
   .cap { font-size: 1.08rem; }
   .capbox { min-height: 10.5rem; }
   .hero .lede { font-size: 1.06rem; }
