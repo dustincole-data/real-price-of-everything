@@ -73,7 +73,10 @@
   transform: translateY(-50%); margin: 0; padding: 0; list-style: none;
   display: flex; flex-direction: column-reverse; gap: 0.95rem; width: 104px;
 }
-.pr-rail li { position: relative; height: 3px; }
+.pr-rail li { position: relative; height: 3px; cursor: pointer; }
+/* the bar is 3px of ink; the tap target is half the gap either side, so the nine slots tile the
+   rail with no dead zones between them */
+.pr-rail li::after { content: ''; position: absolute; inset: -0.475rem 0; }
 .pr-rail i {
   position: absolute; top: 0; left: 50%; height: 3px; border-radius: 1.5px;
   width: calc(6px + var(--w) * 44px); background: var(--good); opacity: 0.34;
@@ -106,13 +109,60 @@
 .prism:not([data-driven]) .pr-scroll { display: none; }
 
 @media (max-width: 860px) {
-  .prism { --obj: min(46vmin, 260px); --hall-lift: 150px; --gap: 760px; --eye: 36%; --xspread: 0.3; }
+  .prism {
+    --obj: min(46vmin, 260px); --hall-lift: 150px; --gap: 760px; --eye: 36%; --xspread: 0.3;
+    /* the strip clears the site-wide brand mark, which is fixed bottom-left at z-index 60 and is
+       not this section's to move */
+    --strip: 62px;
+    --strip-bot: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+  }
   .pr-stage { perspective: 820px; }
   .pr-rulelbl { left: 1rem; }
-  .pr-hud { left: 1rem; right: 1rem; width: auto; bottom: 3.2rem; }
+  .pr-hud {
+    left: 1rem; right: 1rem; width: auto;
+    bottom: calc(var(--strip-bot) + var(--strip) + 0.9rem);
+  }
   .pr-hud .nine-blurb { max-width: none; }
-  .pr-rail, .pr-railtag, .pr-hint { display: none; }
+  .pr-railtag, .pr-hint { display: none; }
+
+  /* A phone has no edge to spare, so the rail stands back up into the skyline it was derived from:
+     nine bars off the same dashed 100 line, full-bleed across the bottom. It is the only cross-item
+     view a phone gets — the hall shows one specimen at a time — and sitting in the thumb zone it
+     doubles as the way to jump between them. */
+  .pr-rail {
+    left: 0; right: auto; top: auto; bottom: var(--strip-bot);
+    transform: none; width: 100%; height: var(--strip);
+    flex-direction: row; align-items: stretch; gap: 0;
+  }
+  .pr-rail li { flex: 1 1 0; height: auto; }
+  .pr-rail li::after { inset: 0; }              /* the slot is already the target at this width */
+  .pr-rail i,
+  .pr-rail li[data-side='down'] i {             /* beats the vertical layout's right-anchored rule */
+    top: 50%; bottom: auto; left: 50%; right: auto;
+    width: 10px; height: calc(3px + var(--w) * 22px);
+    border-radius: 2px; transform: translateX(-50%);
+  }
+  .pr-rail li[data-side='up'] i { top: auto; bottom: 50%; }
+  .pr-rail li.on i { transform: translateX(-50%) scaleX(1.7); }
+  .pr-rail::before {                            /* the 100 line, lying down, dashed as the hall's */
+    left: 0; right: 0; top: 50%; bottom: auto; width: auto; height: 1px;
+    background: repeating-linear-gradient(90deg, var(--rule) 0 6px, transparent 6px 13px);
+  }
 }
+/* A phone held sideways leaves ~390px of stage. The full HUD stack plus the strip is taller than
+   that, and the stage clips what overflows — so drop the sparkline, which is the one readout the
+   authored gallery below still carries in full, and slim the strip to match. */
+@media (max-width: 860px) and (max-height: 560px) {
+  .prism { --strip: 40px; --strip-bot: calc(0.5rem + env(safe-area-inset-bottom, 0px)); }
+  .pr-hud .nine-pct { font-size: clamp(2rem, 1.2rem + 3vw, 3rem); }
+  .pr-hud .nine-spark { display: none; }
+  /* sideways there is width to spare and no height to spare, so the strip steps around the brand
+     mark instead of climbing over it — the slots only get roomier */
+  .pr-rail { left: 11.5rem; width: calc(100% - 11.5rem); }
+  .pr-rail i,
+  .pr-rail li[data-side='down'] i { height: calc(2px + var(--w) * 14px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pr-hint { animation: none; }
   .pr-hud { transition: none; }

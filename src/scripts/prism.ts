@@ -109,6 +109,22 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
   }
   function schedule() { if (!raf) raf = requestAnimationFrame(frame); }
 
+  // Tapping the rail walks the camera to that specimen. The rail is the only map of the nine, so it
+  // should work as one rather than just report position — most of all on a phone, where it's the
+  // whole cross-item view. Inverse of dolly(): at seg = i + HOLD/2 the camera is parked square on
+  // specimen i (k clamps to 0, so z is exactly i × GAP), and the last one only lands at the end.
+  const rail = document.getElementById('prRail');
+  rail?.addEventListener('click', (e) => {
+    const li = (e.target as HTMLElement).closest('li');
+    if (!li || !rail.contains(li)) return;
+    const i = Number(li.getAttribute('data-i'));
+    if (!Number.isFinite(i)) return;
+    const total = scroll.offsetHeight - stage.offsetHeight;
+    const p = i >= N - 1 ? 1 : (i + HOLD / 2) / (N - 1);
+    const top = window.scrollY + scroll.getBoundingClientRect().top + total * p;
+    window.scrollTo({ top, behavior: 'smooth' });
+  });
+
   window.addEventListener('scroll', () => { tgt = progress(); schedule(); }, { passive: true });
   window.addEventListener('resize', () => { GAP = gapOf(); tgt = progress(); schedule(); });
   tgt = cur = progress();
