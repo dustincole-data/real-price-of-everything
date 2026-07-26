@@ -110,7 +110,16 @@
 
 @media (max-width: 860px) {
   .prism {
-    --obj: min(46vmin, 260px); --hall-lift: 150px; --gap: 760px; --eye: 36%; --xspread: 0.3;
+    /* Desktop keeps the HUD in a left column and the specimens centre-right, so the two never meet.
+       A phone stacks them — HUD full-width along the bottom, specimens down the middle — so the
+       hall has to be sized to clear the text rather than inherit the wide-screen numbers: a smaller
+       specimen on a shorter lift, hung higher, which keeps every one of the nine above the HUD.
+       --xspread goes to 0 because the stagger only exists to stop objects stacking across a wide
+       aisle; on a narrow screen it just makes the specimen jump side to side as you scroll.
+       The specimen and its lift are sized in dvh, not px: the HUD is a near-constant block of text,
+       so the shorter the screen the bigger its share, and fixed pixel values that clear it at 844
+       land straight on it at 740. */
+    --obj: min(37vmin, 150px, 20dvh); --hall-lift: 9.5dvh; --gap: 760px; --eye: 26%; --xspread: 0;
     /* the strip clears the site-wide brand mark, which is fixed bottom-left at z-index 60 and is
        not this section's to move */
     --strip: 62px;
@@ -149,15 +158,26 @@
     background: repeating-linear-gradient(90deg, var(--rule) 0 6px, transparent 6px 13px);
   }
 }
-/* A phone held sideways leaves ~390px of stage. The full HUD stack plus the strip is taller than
-   that, and the stage clips what overflows — so drop the sparkline, which is the one readout the
-   authored gallery below still carries in full, and slim the strip to match. */
-@media (max-width: 860px) and (max-height: 560px) {
-  .prism { --strip: 40px; --strip-bot: calc(0.5rem + env(safe-area-inset-bottom, 0px)); }
+/* Short screens — small phones upright, and any phone sideways. The HUD's full stack stops leaving
+   the specimens anywhere to stand, so it sheds the sparkline; the authored gallery below still
+   carries that readout for all nine. */
+@media (max-width: 860px) and (max-height: 700px) {
+  .prism { --strip: 44px; --strip-bot: calc(0.75rem + env(safe-area-inset-bottom, 0px)); }
   .pr-hud .nine-pct { font-size: clamp(2rem, 1.2rem + 3vw, 3rem); }
   .pr-hud .nine-spark { display: none; }
-  /* sideways there is width to spare and no height to spare, so the strip steps around the brand
-     mark instead of climbing over it — the slots only get roomier */
+  .pr-rail i,
+  .pr-rail li[data-side='down'] i { height: calc(2px + var(--w) * 16px); }
+}
+
+/* Sideways is a wide, short screen — the shape desktop already solves, and solving it the same way
+   is what keeps specimens off the text there: HUD in a left column, specimens to the right of it.
+   Stacking them the way an upright phone does cannot work here, because once the HUD has taken its
+   share of 390px there is no vertical room left to stand in. */
+@media (max-width: 860px) and (max-height: 560px) {
+  .prism { --eye: 42%; --obj: min(30vmin, 30dvh); --hall-lift: 9dvh; --strip: 40px; }
+  .pr-spec { left: 68%; }
+  .pr-hud { left: 1rem; right: auto; width: min(22rem, 46vw); }
+  /* the brand mark is fixed bottom-left, so the strip starts past it */
   .pr-rail { left: 11.5rem; width: calc(100% - 11.5rem); }
   .pr-rail i,
   .pr-rail li[data-side='down'] i { height: calc(2px + var(--w) * 14px); }
