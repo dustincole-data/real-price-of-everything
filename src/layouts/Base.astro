@@ -30,17 +30,21 @@ const canonical = Astro.site?.href;
 <body>
   <slot />
 
-  <!-- dustincoledata brand mark -->
-  <a class="dcd-mark" href="https://dustincoledata.com" target="_blank" rel="noopener"
-     aria-label="A Dustin Cole Data project">
-    <span class="dcd-mark-name">Dustin Cole</span><span class="dcd-mark-suffix">Data</span>
-  </a>
+  <!-- dustincoledata brand mark: last thing on the page, in normal flow. It used to be pinned to
+       the viewport, which meant it sat on top of whatever the page put in that corner. -->
+  <div class="dcd-footer">
+    <a class="dcd-mark" href="https://dustincoledata.com" target="_blank" rel="noopener"
+       aria-label="A Dustin Cole Data project">
+      <span class="dcd-mark-name">Dustin Cole</span><span class="dcd-mark-suffix">Data</span>
+    </a>
+  </div>
   <style>
-    .dcd-mark{position:fixed;left:max(14px,env(safe-area-inset-left,0px));
-      bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:60;
-      display:inline-flex;align-items:baseline;gap:7px;padding:7px 12px;border-radius:999px;
-      background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
-      border:1px solid rgba(22,24,29,.10);box-shadow:0 2px 10px rgba(16,18,24,.06);
+    .dcd-footer{display:flex;justify-content:center;
+      padding:0 1rem calc(2.25rem + env(safe-area-inset-bottom,0px));}
+    /* no longer floating over content, so it drops the blur and the lift-off shadow it needed to
+       stay legible there */
+    .dcd-mark{display:inline-flex;align-items:baseline;gap:7px;padding:7px 12px;border-radius:999px;
+      border:1px solid rgba(22,24,29,.10);
       text-decoration:none;line-height:1;opacity:.85;transition:opacity .2s ease,transform .2s ease;}
     .dcd-mark:hover{opacity:1;transform:translateY(-1px);}
     .dcd-mark:focus-visible{outline:2px solid #4A3AAB;outline-offset:2px;}
