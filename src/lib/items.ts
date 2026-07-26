@@ -30,17 +30,16 @@ const ranked = [...data.goods].sort((a, b) => a.realIndexToday - b.realIndexToda
 const downs = ranked.filter((g) => g.pole === 'down');
 const ups = ranked.filter((g) => g.pole === 'up');
 const dev = (g: Good) => g.realIndexToday - 100;
-// two normalisers, deliberately different:
-//   mag  — per pole, so BOTH extremes (a TV at −100%, tuition at +248%) read as fully saturated
-//   lift — across all nine, signed, so a length stays literally true to the 100 baseline. The hall
-//          no longer hangs specimens by it; the rail's bar lengths (Math.abs) still do.
+// mag is normalised per pole, so BOTH extremes (a TV at −100%, tuition at +248%) read as fully
+// saturated. It drives colour only — the spine's bar lengths come off pct directly, on one shared
+// linear scale, so a length is literally true to the 100 baseline.
 const maxOf = (gs: Good[]) => Math.max(...gs.map((g) => Math.abs(dev(g))));
-const maxDown = maxOf(downs), maxUp = maxOf(ups), maxAll = Math.max(maxDown, maxUp);
+const maxDown = maxOf(downs), maxUp = maxOf(ups);
 
 export interface Item {
   id: string; label: string; head: string; blurb: string;
   idx: number; pct: number; real: (number | null)[]; pole: 'up' | 'down';
-  hue: number; mag: number; lift: number;
+  hue: number; mag: number;
   color: string; colorInk: string; rise: boolean;
 }
 
@@ -58,7 +57,6 @@ export const ITEMS: Item[] = ranked.map((g) => {
     id: g.id, label: g.label, head: HEAD[g.id], blurb: BLURB[g.id],
     idx: g.realIndexToday, pct: Math.round(dev(g)), real: g.real, pole: g.pole,
     hue, mag,
-    lift: Math.sign(dev(g)) * Math.sqrt(Math.abs(dev(g)) / maxAll),
     color: `oklch(${L.toFixed(3)} ${C.toFixed(3)} ${h})`,            // large marks on paper (≥3:1)
     colorInk: `oklch(${(Math.min(L, 0.48) - 0.02 * mag).toFixed(3)} ${(C * 0.92).toFixed(3)} ${h})`,
     rise: dev(g) >= 0,

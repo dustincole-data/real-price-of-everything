@@ -3,7 +3,7 @@
    and nothing is ruled — the dashed 100 line is the only line on the page. Where the dark drafts
    used additive glow, this uses the light-ground equivalent — a tinted halo + a real contact
    shadow — so a specimen reads as placed on paper, not pasted onto it.
-   prism.css imports this first and adds the hall on top of it. */
+   prism.css imports this first and builds the spine on top of it. */
 
 .nine {
   --obj: min(34vmin, 340px);          /* one optical size for all nine specimens */
