@@ -1,242 +1,142 @@
-/* ===== PRISM — the specimen hall ============================================================
-   A white hall you fly down. Nine drawn specimens, one at a time, each in the same centred place —
-   the walk is the story, not the geometry. Bare paper underfoot; depth comes from perspective and
-   from specimens fading into the paper at the far end, aerial perspective rather than bloom.
-   CSS 3D, not WebGL: nothing here needs a glow.
-   The rail on the right is this section's only chart, and carries its own dashed 100 axis. */
+/* ===== PRISM — the spine ====================================================================
+   One chart of all nine, always visible. Nine bars diverge off a single dashed 100 line that runs
+   the full height of the sticky stage, ranked best real bargain (top) to worst (bottom) — so
+   scrolling down the page IS scrolling down the chart. As you pass an item, its drawing and its
+   words arrive beside it.
+   The shape carries the story on its own: long bars left at the top, pinching to nothing at the
+   spine, flaring long right at the bottom. A wedge.
+   Every length here is server-rendered (--w, --tip, --spine, all from ITEMS). The driver decides
+   only WHICH row is active; it computes no scale. */
 @import './nine.css';
 
-/* Every specimen stands in the same place, and it is bigger for it.
-   The scatter is gone: a per-item vertical lift off the 100 line, and a horizontal stagger across
-   the aisle. Neither survived on merit. The lift was a real encoding at a legible amplitude, but
-   only one specimen is ever visible at a time — a height with no neighbour and no rule beside it
-   is not a reading, so it cost the eye a jump on every scroll and returned nothing. The stagger
-   existed only to stop two objects overlapping into mush, which the one-gap fade now prevents.
-   Deleting both buys the whole budget back, and it goes into the drawing. */
-/* The wide layout is three columns — HUD, specimen, rail — so the drawing is capped by the LANE
-   between the other two, not just by the viewport. 41rem is the HUD's floor (32rem, below) plus the
-   rail and its gutters. Without this term the floor that keeps the specimen off the verdict simply
-   pushed it into the rail instead: 43px over it at 880×620. */
-.prism { --gap: 900px; --eye: 46%; --obj: min(46vmin, 420px, calc(100vw - 42rem)); }
+/* --reserve is the label inset on BOTH sides of the plot, so an active tip label can never cross
+   into the card column. 12rem is sized off the widest active label ("College +248%"); the clamp's
+   floor is what keeps a plot at 880px wide. */
+.prism { --rule: var(--baseline); --reserve: clamp(6rem, 12vw, 12rem); }
 
 .pr-scroll { position: relative; }
 .pr-stage {
   position: sticky; top: var(--mast); height: calc(100dvh - var(--mast));
   overflow: clip; isolation: isolate;
-  perspective: 1100px; perspective-origin: 50% var(--eye);
+  box-sizing: border-box;                 /* the padding must come OUT of the width, not add to it */
+  display: grid; grid-template-columns: minmax(0, 1fr) 27rem;
+  gap: clamp(1rem, 3vw, 3rem); padding-inline: clamp(1rem, 4vw, 3.5rem);
+  /* the axis label sits above the chart's first row and the dashed line overhangs both ends, so
+     the stage owes them a little air — without it "100" is clipped by `overflow: clip` */
+  padding-block: 1.7rem 0.9rem;
 }
 
-/* ---- the hall ----
-   No 100 line here any more: one specimen is visible at a time, so a rule across the hall had
-   nothing plotted against it. The HUD states the number and the section opener says what it means. */
-.pr-hall { position: absolute; inset: 0; transform-style: preserve-3d; }
-
-/* ---- a specimen ----
-   One place, every time: the only thing scroll moves is --z, the camera's distance down the hall.
-   `left` is centred but floored clear of the HUD's column, because on a wide screen the HUD is a
-   left column rather than a bottom band and the two share a row. Without the floor a resized
-   window — around 880×620 — dropped a 211px drawing straight onto the verdict text; the stagger
-   this replaces had been hiding that by accident. max() keeps dead-centre wherever there is room
-   (anything from ~1450px up) and only nudges right when the column would otherwise be hit. */
-.pr-spec {
-  position: absolute; top: var(--eye);
-  left: max(50%, calc(33rem + var(--obj) / 2));
-  width: var(--obj); height: var(--obj); margin: calc(var(--obj) / -2) 0 0 calc(var(--obj) / -2);
-  transform: translateZ(var(--z, 0px));
-  opacity: var(--o, 0);
-  will-change: transform, opacity;
-}
-.pr-spec[data-far] { visibility: hidden; }
-.pr-spec .nine-obj { width: 100%; height: 100%; }
-/* the plaque hangs off the bottom of the specimen and inherits its 3D transform, so it recedes
-   with the object instead of floating in front of the hall */
-.pr-plate {
-  position: absolute; top: 100%; left: 50%; width: max-content;
-  transform: translate(-50%, 0.7rem);
-}
-
-/* ---- HUD: the active specimen's verdict, on paper ---- */
-.pr-hud {
-  position: absolute; z-index: 4;
-  left: clamp(1rem, 4vw, 3.5rem); bottom: clamp(3.4rem, 7vh, 4rem);
-  width: min(27rem, 78vw);
-  opacity: 0; transform: translateY(10px);
-  transition: opacity .45s ease, transform .45s cubic-bezier(.22,.61,.36,1);
-}
-.pr-hud.is-on { opacity: 1; transform: none; }
-.pr-hud .nine-name { font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem); margin-top: 0.2rem; }
-.pr-hud .nine-pct { font-size: clamp(2.6rem, 1.8rem + 4.4vw, 4.6rem); margin: 0.1rem 0 0.35rem; }
-/* a real step down from the number and up from the blurb — at 1.05 against the blurb's 0.98 it was
-   a 1px difference carried entirely by weight, so it read as a bolded first line of the paragraph */
-.pr-hud .nine-head { font-size: 1.2rem; }
-.pr-hud .nine-blurb { font-size: 0.98rem; margin-top: 0.35rem; }
-.pr-hud .nine-spark { width: 168px; height: 52px; margin-top: 0.9rem; }
-
-/* ---- rail: the nine as ticks off a vertical 100 line — the skyline, stood on its side.
-   column-reverse so higher up the rail means a higher real price, matching the hall and the top
-   chart's y-axis; the highlight then climbs as you walk. ---- */
-.pr-rail {
-  position: absolute; z-index: 4; right: clamp(0.75rem, 2.5vw, 2.25rem); top: var(--eye);
-  transform: translateY(-50%); margin: 0; padding: 0; list-style: none;
-  display: flex; flex-direction: column-reverse; gap: 0.95rem; width: 104px;
-}
-.pr-rail li { position: relative; height: 3px; cursor: pointer; }
-/* the bar is 3px of ink; the tap target is half the gap either side, so the nine slots tile the
-   rail with no dead zones between them */
-.pr-rail li::after { content: ''; position: absolute; inset: -0.475rem 0; }
-/* hovering a tick says which one it is — nine anonymous marks are a decoration, nine named ones
-   are a map. Sits to the left of the rail so it never leaves the stage. */
-.pr-rail li::before {
-  content: attr(data-name); position: absolute; right: calc(100% + 0.6rem); top: 50%;
-  transform: translateY(-50%); white-space: nowrap; pointer-events: none;
-  font-weight: 600; font-size: 0.8rem; letter-spacing: -0.01em; color: var(--good-ink);
-  background: var(--paper); padding: 1px 0.4em; border-radius: 2px;
-  opacity: 0; transition: opacity .2s ease;
-}
-.pr-rail li:hover::before { opacity: 1; }
-.pr-rail i {
-  position: absolute; top: 0; left: 50%; height: 3px; border-radius: 1.5px;
-  width: calc(6px + var(--w) * 44px); background: var(--good); opacity: 0.34;
-  transition: opacity .35s ease, transform .35s ease;
-}
-.pr-rail li[data-side='down'] i { left: auto; right: 50%; }
-.pr-rail li.on i { opacity: 1; transform: scaleY(1.8); }
-.pr-rail::before {                             /* the 100 line, again, as the rail's own axis */
-  content: ''; position: absolute; left: 50%; top: -14px; bottom: -14px; width: 1px;
+/* ---- the chart: nine equal rows, one dashed spine, no gridlines ---- */
+.sp-chart { position: relative; display: grid; height: 100%; grid-template-rows: repeat(9, 1fr); }
+.sp-row { position: relative; margin-inline: var(--reserve); cursor: pointer; }
+/* out of flow on purpose: the spine is a rule drawn across the chart, not a tenth row. Left in the
+   grid it consumed all nine tracks and pushed the rows into implicit ones, stacking every tag. */
+.sp-axis { position: absolute; inset: 0; margin-inline: var(--reserve); }
+.sp-axis i {
+  position: absolute; left: var(--spine); top: -0.35rem; bottom: -0.35rem; width: 1px;
   background: repeating-linear-gradient(var(--rule) 0 4px, transparent 4px 9px);
 }
-.pr-railtag {
-  position: absolute; z-index: 4; right: clamp(0.75rem, 2.5vw, 2.25rem); top: var(--eye);
-  width: 104px; text-align: center;
-  transform: translateY(calc(-50% - 5.9rem));
+.sp-axlbl {
+  position: absolute; left: var(--spine); top: -1.35rem; transform: translateX(-50%);
   font-family: var(--font-mono); font-size: 0.68rem; color: var(--ink-faint);
 }
 
-/* the rail's own caption. The pointer type decides the verb, so a phone is never told to click. */
-.pr-raillbl {
-  position: absolute; z-index: 4; right: clamp(0.75rem, 2.5vw, 2.25rem); top: var(--eye);
-  width: 104px; text-align: center; transform: translateY(5.4rem);
-  font-family: var(--font-mono); font-size: 0.62rem; color: var(--ink-faint);
-  transition: opacity .4s ease;
+.sp-bar {
+  position: absolute; top: 50%; width: var(--w); height: 15px; border-radius: 3px;
+  transform: translateY(-50%); background: var(--good); opacity: 0.45;
+  transition: opacity .3s ease, height .3s ease;
 }
-.pr-raillbl::after { content: 'click to jump'; }
-@media (pointer: coarse) { .pr-raillbl::after { content: 'tap to jump'; } }
+.sp-row[data-up]       .sp-bar { left: var(--spine); }
+.sp-row:not([data-up]) .sp-bar { right: calc(100% - var(--spine)); }
+.sp-row[data-on] .sp-bar { opacity: 1; height: 24px; }
 
-.pr-hint {
-  position: absolute; z-index: 4; left: 50%; bottom: clamp(0.75rem, 3vh, 1.5rem);
-  transform: translateX(-50%);
-  font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-muted);
-  animation: prFloat 2.6s ease-in-out infinite;
-  transition: opacity .4s ease;
+/* the tip label: name + number on one line, riding its own bar's end */
+.sp-tag {
+  position: absolute; top: 50%; transform: translateY(-50%); margin: 0;
+  white-space: nowrap; color: var(--ink-faint); transition: color .3s ease;
 }
-/* a first-step affordance, not permanent chrome. `animation: none` is load-bearing: prFloat also
-   sets opacity, and a running animation outranks this rule — so the hint was still sitting there
-   on specimen nine, telling you to start scrolling. */
-.prism[data-walking] .pr-hint,
-.prism[data-walking] .pr-raillbl { opacity: 0; animation: none; }
-@keyframes prFloat { 0%, 100% { transform: translate(-50%, 0); opacity: 0.5; } 50% { transform: translate(-50%, 5px); opacity: 1; } }
+.sp-row[data-up]       .sp-tag { left: calc(var(--tip) + 0.7rem); }
+.sp-row:not([data-up]) .sp-tag { right: calc(100% - var(--tip) + 0.7rem); text-align: right; }
+.sp-tag .t-nm { font-weight: 500; font-size: 0.95rem; letter-spacing: -0.01em; }
+.sp-tag .t-pc {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 0.82rem; letter-spacing: -0.03em; margin-left: 0.45rem;
+}
+.sp-row[data-on] .sp-tag { color: var(--good-ink); }
+.sp-row[data-on] .t-nm { font-weight: 600; font-size: 1.15rem; }
+.sp-row[data-on] .t-pc { font-size: 1.9rem; color: var(--good); margin-left: 0.6rem; }
+/* the active row's wash — radial, because a hard-edged band left ink hanging in empty space */
+.sp-row[data-on]::before {
+  content: ''; position: absolute; inset: 4% -1rem; border-radius: 4px;
+  background: radial-gradient(ellipse 62% 100% at var(--spine) 50%,
+    color-mix(in oklch, var(--good) 14%, transparent), transparent 76%);
+}
 
-/* ---- gating: the hall only exists once the driver is live ---- */
+/* the tie: bar tip → card, active item only. Coordinates are the chart's own box; the elbow runs
+   out past its right edge into the card column, and the stage's `clip` is what bounds it. */
+.sp-leader { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+.sp-leader polyline {
+  fill: none; stroke: var(--good); stroke-width: 1; opacity: 0.35;
+  transition: opacity .3s ease;
+}
+
+/* ---- the card: tracks the active row, damped ---- */
+.sp-cardcol { position: relative; }
+/* --top travels the SLACK, not the column: `top` resolves its % against the column's height and
+   the transform resolves the same % against the card's own, so the card sits at
+   --top × (column − card) and cannot leave the column at either end for any --top in 0..100%.
+   Centre-tracking (top:--top; translateY(-50%)) instead pushed the card 27px off the top of a
+   866×600 stage — the failure the row-1 mock predicted, here fixed by construction rather than by
+   tuning the travel range per viewport. */
+.sp-card { position: absolute; top: var(--top); transform: translateY(calc(-1 * var(--top))); width: 100%; }
+/* the drawing is only ever hero size — this is the one place it is drawn at all */
+.sp-plate { --obj: min(17rem, 34vh); margin-bottom: 1rem; }
+.sp-card .nine-name { font-size: 2.1rem; }
+.sp-cardpc { display: none; }            /* wide: the number lives at the bar tip */
+.sp-card .nine-head { font-size: 1.2rem; margin-top: 0.5rem; }
+.sp-card .nine-blurb { font-size: 0.98rem; margin-top: 0.35rem; }
+.sp-card .nine-spark { width: 168px; height: 52px; margin-top: 0.9rem; }
+/* the item swap is the one piece of self-running motion left; the walk itself is scroll-coupled */
+.sp-card[data-swap] { animation: spSwap .32s ease; }
+@keyframes spSwap { from { opacity: 0.15; } }
+
+/* ---- gating: the chart only exists once the driver is live ---- */
 .prism:not([data-driven]) .pr-scroll { display: none; }
 
+/* ---- phone: slim spine, big drawing. The chart drops its labels entirely, exactly as the top
+        chart does when narrow — spine, bar lengths, order and highlight all survive at scale.
+        It is the same object, smaller. ---- */
 @media (max-width: 860px) {
-  .prism {
-    /* A phone stacks what the wide layout puts side by side: HUD full-width along the bottom,
-       specimen down the middle. So the drawing is bounded by the text below it, not by a column
-       beside it — vmin sets the ambition and svh is the safety. The height term is what actually
-       binds, and 360×740 is the case that binds hardest: tall enough to keep the HUD's sparkline,
-       narrow enough to cap the drawing. svh not dvh on purpose — dvh is the *dynamic* viewport, so
-       the drawing would grow and shrink as the URL bar collapsed while you were looking at it. */
-    --obj: min(70vmin, 270px, 30svh); --gap: 760px; --eye: 22%;
-    --strip: 62px;
-    --strip-bot: calc(0.6rem + env(safe-area-inset-bottom, 0px));
+  .pr-stage {
+    grid-template-columns: 84px minmax(0, 1fr); gap: 1rem;
+    padding-inline: 1rem; padding-block: 1rem 0.75rem;
   }
-  .pr-stage { perspective: 820px; }
-  /* the HUD is a bottom band here, not a left column, so the specimen wants the middle — and the
-     wide-screen floor would otherwise shove it clean off a 390px screen */
-  .pr-spec { left: 50%; }
-  .pr-hud {
-    left: 1rem; right: 1rem; width: auto;
-    bottom: calc(var(--strip-bot) + var(--strip) + 0.9rem);
-  }
-  .pr-hud .nine-blurb { max-width: none; }
-  .pr-hint { display: none; }
-  /* The strip's dashed line is the 100 axis, and this is the only thing that names it on a phone:
-     the masthead's "real, inflation-adjusted" is hidden at this width, and below 700px tall the
-     HUD sheds its sparkline too. Without it "+19%" has nothing to be 19% of. Sits above the strip
-     beside "tap to jump", and unlike that cue it does NOT fade once you start walking. */
-  .pr-railtag {
-    right: auto; left: 0.5rem; top: auto; width: auto; transform: none;
-    bottom: calc(var(--strip-bot) + var(--strip) + 0.1rem);
-  }
-  /* the object is ~250px here, so the plaque steps down rather than out-measuring the drawing */
-  .pr-plate { font-size: 12px; letter-spacing: 0.14em; padding-top: 6px; }
-  .pr-plate { transform: translate(-50%, 0.5rem); }
-  /* the hover chip has nowhere to go beside a full-bleed horizontal strip */
-  .pr-rail li::before { display: none; }
-  /* the strip is the phone's only cross-item view AND its only way to skip — say so, once */
-  .pr-raillbl {
-    right: auto; left: 0; top: auto; width: 100%;
-    bottom: calc(var(--strip-bot) + var(--strip) + 0.1rem);
-    transform: none;
-  }
-
-  /* A phone has no edge to spare, so the rail stands back up into the skyline it was derived from:
-     nine bars off the same dashed 100 line, full-bleed across the bottom. It is the only cross-item
-     view a phone gets — the hall shows one specimen at a time — and sitting in the thumb zone it
-     doubles as the way to jump between them. */
-  .pr-rail {
-    left: 0; right: auto; top: auto; bottom: var(--strip-bot);
-    transform: none; width: 100%; height: var(--strip);
-    flex-direction: row; align-items: stretch; gap: 0;
-  }
-  .pr-rail li { flex: 1 1 0; height: auto; }
-  .pr-rail li::after { inset: 0; }              /* the slot is already the target at this width */
-  .pr-rail i,
-  .pr-rail li[data-side='down'] i {             /* beats the vertical layout's right-anchored rule */
-    top: 50%; bottom: auto; left: 50%; right: auto;
-    width: 10px; height: calc(3px + var(--w) * 22px);
-    border-radius: 2px; transform: translateX(-50%);
-  }
-  .pr-rail li[data-side='up'] i { top: auto; bottom: 50%; }
-  .pr-rail li.on i { transform: translateX(-50%) scaleX(1.7); }
-  .pr-rail::before {                            /* the 100 line, lying down, dashed as the hall's */
-    left: 0; right: 0; top: 50%; bottom: auto; width: auto; height: 1px;
-    background: repeating-linear-gradient(90deg, var(--rule) 0 6px, transparent 6px 13px);
-  }
-}
-/* Short screens — small phones upright, and any phone sideways. The HUD's full stack stops leaving
-   the specimens anywhere to stand, so it sheds the sparkline; the authored gallery below still
-   carries that readout for all nine. */
-@media (max-width: 860px) and (max-height: 700px) {
-  .prism { --strip: 44px; --strip-bot: calc(0.75rem + env(safe-area-inset-bottom, 0px)); }
-  .pr-hud .nine-pct { font-size: clamp(2rem, 1.2rem + 3vw, 3rem); }
-  .pr-hud .nine-spark { display: none; }
-  .pr-plate { font-size: 11px; padding-top: 5px; }
-  .pr-rail i,
-  .pr-rail li[data-side='down'] i { height: calc(2px + var(--w) * 16px); }
+  .sp-row, .sp-axis { margin-inline: 0; }
+  .sp-tag, .sp-axlbl, .sp-leader { display: none; }
+  .sp-bar { height: 12px; }
+  .sp-row[data-on] .sp-bar { height: 20px; }
+  .sp-row[data-on]::before { inset: 4% -0.5rem; }
+  .sp-cardcol { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+  .sp-card { position: static; transform: none; }
+  .sp-plate { --obj: min(200px, 30svh); margin-inline: auto; }
+  .sp-card .nine-name { font-size: 1.65rem; }
+  .sp-cardpc { display: block; font-size: 2.6rem; margin: 0.1rem 0 0.35rem; }
+  .sp-card .nine-head { font-size: 1.05rem; }
+  .sp-card .nine-blurb { font-size: 0.95rem; max-width: none; }
 }
 
-/* Sideways is a wide, short screen — the shape desktop already solves, and solving it the same way
-   is what keeps specimens off the text there: HUD in a left column, specimens to the right of it.
-   Stacking them the way an upright phone does cannot work here, because once the HUD has taken its
-   share of 390px there is no vertical room left to stand in. */
-@media (max-width: 860px) and (max-height: 560px) {
-  .prism { --eye: 42%; --obj: min(36vmin, 36svh); --strip: 40px; }
-  .pr-hud { left: 1rem; right: auto; width: min(22rem, 46vw); }
-  /* Same floor as the wide layout, against this block's own narrower HUD. The query says landscape
-     but it also matches short PORTRAIT windows — split-screen, a resized browser — and at 360×560
-     a flat 68% put the drawing 1.6px into the HUD. */
-  .pr-spec { left: max(68%, calc(1rem + min(22rem, 46vw) + 0.9rem + var(--obj) / 2)); }
-  .pr-rail i,
-  .pr-rail li[data-side='down'] i { height: calc(2px + var(--w) * 14px); }
+/* Short screens — a laptop window pulled down, a small phone upright, any phone sideways. The
+   card's full stack stops leaving the chart beside it any slack to travel in, so it sheds the
+   sparkline exactly as the old HUD did; the authored gallery below still carries that readout for
+   all nine. At 866×600 this is the difference between 75px of card travel and 141px. */
+@media (max-height: 700px) {
+  .sp-card .nine-spark { display: none; }
+  .sp-cardpc { font-size: 2.1rem; }
 }
 
-/* the hall itself still runs under reduced motion — see prism.ts. What goes is everything that
-   moves without the finger: the floating hint, the HUD's entrance, the rail's highlight tween. */
+/* the walk still walks under reduced motion — see prism.ts. What goes is everything that moves
+   without the finger: the card's swap, and the highlight's tweens. */
 @media (prefers-reduced-motion: reduce) {
-  .pr-hint { animation: none; }
-  /* the affordances have to snap too — a 400ms cross-fade is still motion nobody asked for, and
-     it left "scroll ↓" fading over the first specimen for anyone who set the preference */
-  .pr-hud, .pr-rail i, .pr-hint, .pr-raillbl, .pr-rail li::before { transition: none; }
+  .sp-card[data-swap] { animation: none; }
+  .sp-bar, .sp-tag, .sp-leader polyline { transition: none; }
 }

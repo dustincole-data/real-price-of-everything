@@ -1,6 +1,6 @@
 ---
-// The site: the drain-the-tide top (TopStory), then PRISM — the specimen hall — as the after
-// section. Graduated from /prism on 2026-07-25; the horizon and strata variations are retired.
+// The site: the drain-the-tide top (TopStory), then PRISM — the spine — as the after section.
+// Graduated from /prism on 2026-07-25; the horizon and strata variations are retired.
 import Base from '../layouts/Base.astro';
 import TopStory from '../components/TopStory.astro';
 import Footer from '../components/Footer.astro';
@@ -9,20 +9,36 @@ import '../styles/prism.css';
 
 const nine = ITEMS.map((it, i) => ({ it, i, spark: sparkPath(it.real, 168, 52) }));
 const first = nine[0];
+
+// All of the chart's geometry is computed here, once, and handed to CSS as custom properties. The
+// client script only decides WHICH row is active — it owns no scale. Derived from ITEMS so every
+// length traces to the same numbers the top chart draws.
+const pcts = ITEMS.map((it) => it.pct);
+const UP = Math.max(...pcts), DOWN = Math.abs(Math.min(...pcts));
+const SPAN = UP + DOWN;                       // 348
+// The down side is bounded at −100 by arithmetic (a price cannot go below zero), so the extremes
+// land exactly on the plot's two edges and nothing needs clamping.
+const SPINE = (DOWN / SPAN) * 100;            // 28.7% — where the dashed 100 line stands
+const rows = ITEMS.map((it, i) => ({
+  it, i,
+  up: it.pct >= 0,
+  w: (Math.abs(it.pct) / SPAN) * 100,                                   // bar length, % of plot
+  tip: it.pct >= 0 ? SPINE + (it.pct / SPAN) * 100                      // where the bar ends
+                   : SPINE - (Math.abs(it.pct) / SPAN) * 100,
+}));
 ---
 <Base>
   <TopStory>
-    <section class="nine prism" id="prism">
+    <section class="nine prism" id="prism" style={`--spine:${SPINE.toFixed(3)}%`}>
       <div class="nine-intro measure">
         <h2>Nine things, one at a time.</h2>
         <p class="lede">
-          Same lens, nine verdicts. Walk the hall from the best real bargain today to the one that
-          ran away.
+          Same lens, nine verdicts, ranked from the best real bargain today to the one that ran
+          away.
         </p>
-        {/* This line has to say what the hall actually does. It used to promise a vertical
-            encoding — "hung off the same line: above it beat inflation's pace" — which stopped
-            being true the moment the rule and the lift went. It now names what every number in
-            the section means, which on a phone there is no other way to learn. */}
+        {/* This line has to say what the chart below actually measures. It names what every
+            number in the section means, which on a phone — where the bars go unlabelled — there
+            is no other way to learn. */}
         <p class="meta">
           nine specimens · 1980&ndash;2024 · each % is today's real price measured against its own
           1980 price
@@ -31,45 +47,46 @@ const first = nine[0];
 
       <div class="pr-scroll" id="prScroll">
         <div class="pr-stage" id="prStage">
-          <div class="pr-hall" id="prHall" aria-hidden="true">
-            {nine.map(({ it, i }) => (
-              <div class="pr-spec" id={`prSpec${i}`} data-i={i} data-far
-                   style={`--good:${it.color}; --good-ink:${it.colorInk}`}>
-                <figure class="nine-obj">
-                  <svg class="nine-mark" viewBox="0 0 120 120"><use href={`#mk-${it.id}`} /></svg>
-                </figure>
-                {/* the plaque: a specimen you cannot name is a decoration. It rides the same 3D
-                    transform as the object, so it reads as part of the exhibit, not an overlay. */}
-                <p class="nine-plate pr-plate">{it.label}</p>
+          {/* The chart is aria-hidden, and so is the card: .nine-static below is the single
+              accessible source for all nine. Announcing both read every verdict twice. */}
+          <div class="sp-chart" id="spChart" aria-hidden="true">
+            <div class="sp-axis"><i></i><span class="sp-axlbl">100</span></div>
+            {rows.map((r) => (
+              <div class="sp-row" data-i={r.i} data-up={r.up ? '' : undefined}
+                   data-on={r.i === 0 ? '' : undefined}
+                   style={`--good:${r.it.color}; --good-ink:${r.it.colorInk};
+                           --w:${r.w.toFixed(3)}%; --tip:${r.tip.toFixed(3)}%`}>
+                <i class="sp-bar"></i>
+                {/* the label rides its own bar's tip — no gutters, so the plot gets the full width
+                    and each name sits where the eye already is */}
+                <p class="sp-tag"><span class="t-nm">{r.it.label}</span>
+                  <span class="t-pc">{r.it.pct >= 0 ? '+' : '−'}{Math.abs(r.it.pct)}%</span></p>
               </div>
             ))}
+            <svg class="sp-leader" id="spLeader" aria-hidden="true"><polyline points="" /></svg>
           </div>
 
-          <div class="pr-hud is-on" id="prHud" style={`--good:${first.it.color}; --good-ink:${first.it.colorInk}`}>
-            <p class="nine-rank"><span id="prRank">01</span> / 09 · real price today</p>
-            <p class="nine-name" id="prName">{first.it.label}</p>
-            <p class="nine-pct" id="prPct">{first.it.pct >= 0 ? '+' : '−'}{Math.abs(first.it.pct)}%</p>
-            <p class="nine-head" id="prHead">{first.it.head}</p>
-            <p class="nine-blurb" id="prBlurb">{first.it.blurb}</p>
-            <svg class="nine-spark" id="prSpark" viewBox="0 0 168 52" aria-hidden="true">
-              <line class="base" x1="0" y1={first.spark.baseY} x2="168" y2={first.spark.baseY} />
-              <path class="ln" d={first.spark.d} />
-              <circle class="dot" cx={first.spark.endX} cy={first.spark.endY} r="2.8" />
-            </svg>
+          <div class="sp-cardcol">
+            {/* the HUD's nodes minus the rank line — position in the stack IS the rank — and plus
+                #spUse, because the drawing now changes with the active item */}
+            <article class="sp-card" id="spCard" aria-hidden="true"
+                     style={`--good:${first.it.color}; --good-ink:${first.it.colorInk}; --top:32%`}>
+              <figure class="nine-obj sp-plate">
+                <svg class="nine-mark" viewBox="0 0 120 120"><use id="spUse" href={`#mk-${first.it.id}`} /></svg>
+              </figure>
+              <p class="nine-name" id="spName">{first.it.label}</p>
+              {/* the chart is unlabelled on a phone, so the number rides here instead — either
+                  way exactly one % per item is ever on screen */}
+              <p class="nine-pct sp-cardpc" id="spPct">{first.it.pct >= 0 ? '+' : '−'}{Math.abs(first.it.pct)}%</p>
+              <p class="nine-head" id="spHead">{first.it.head}</p>
+              <p class="nine-blurb" id="spBlurb">{first.it.blurb}</p>
+              <svg class="nine-spark" id="spSpark" viewBox="0 0 168 52">
+                <line class="base" x1="0" y1={first.spark.baseY} x2="168" y2={first.spark.baseY} />
+                <path class="ln" d={first.spark.d} />
+                <circle class="dot" cx={first.spark.endX} cy={first.spark.endY} r="2.8" />
+              </svg>
+            </article>
           </div>
-
-          <p class="pr-railtag" aria-hidden="true">100</p>
-          <ol class="pr-rail" id="prRail" aria-hidden="true">
-            {nine.map(({ it, i }) => (
-              <li data-i={i} data-side={it.rise ? 'up' : 'down'} data-name={it.label}
-                  style={`--good:${it.color}; --good-ink:${it.colorInk}; --w:${Math.abs(it.lift).toFixed(3)}`}><i></i></li>
-            ))}
-          </ol>
-          {/* the rail is the only map of the nine and the only way to skip around it — without
-              this it reads as chrome and nobody touches it */}
-          <p class="pr-raillbl" aria-hidden="true"></p>
-
-          <p class="pr-hint" aria-hidden="true">scroll ↓</p>
         </div>
       </div>
 
