@@ -126,7 +126,10 @@
     --strip-bot: calc(3.25rem + env(safe-area-inset-bottom, 0px));
   }
   .pr-stage { perspective: 820px; }
+  /* the specimens run down the middle now, and the full label reaches far enough across to clip
+     them — so it says what the top chart's own label says at this width */
   .pr-rulelbl { left: 1rem; }
+  .pr-rulelbl-rest { display: none; }
   .pr-hud {
     left: 1rem; right: 1rem; width: auto;
     bottom: calc(var(--strip-bot) + var(--strip) + 0.9rem);
