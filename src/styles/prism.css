@@ -78,13 +78,11 @@
     color-mix(in oklch, var(--good) 14%, transparent), transparent 76%);
 }
 
-/* the tie: bar tip → card, active item only. Coordinates are the chart's own box; the elbow runs
-   out past its right edge into the card column, and the stage's `clip` is what bounds it. */
-.sp-leader { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
-.sp-leader polyline {
-  fill: none; stroke: var(--good); stroke-width: 1; opacity: 0.35;
-  transition: opacity .3s ease;
-}
+/* No leader elbow ties the bar to the card. Built and judged: it reads as a tie only when the card
+   happens to sit at the bar's own height (row 5). At rows 1 and 9 the card's damped travel turns
+   it into a 240px right-angled hairline across blank paper, which reads as a box edge — and this
+   page's rule is that the dashed 100 line is the only rule on it. The wash, the shared hue and the
+   damped alignment carry the tie without adding a second line. */
 
 /* ---- the card: tracks the active row, damped ---- */
 .sp-cardcol { position: relative; }
@@ -118,7 +116,7 @@
     padding-inline: 1rem; padding-block: 1rem 0.75rem;
   }
   .sp-row, .sp-axis { margin-inline: 0; }
-  .sp-tag, .sp-axlbl, .sp-leader { display: none; }
+  .sp-tag, .sp-axlbl { display: none; }
   .sp-bar { height: 12px; }
   .sp-row[data-on] .sp-bar { height: 20px; }
   .sp-row[data-on]::before { inset: 4% -0.5rem; }
@@ -144,5 +142,5 @@
    without the finger: the card's swap, and the highlight's tweens. */
 @media (prefers-reduced-motion: reduce) {
   .sp-card[data-swap] { animation: none; }
-  .sp-bar, .sp-tag, .sp-leader polyline { transition: none; }
+  .sp-bar, .sp-tag { transition: none; }
 }

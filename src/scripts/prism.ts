@@ -1,7 +1,7 @@
 // PRISM — the spine.
 // Scroll walks a highlight down one always-visible chart of all nine, and the verdict card tracks
 // it. Every length in the chart is server-rendered from ITEMS; this file computes no scale. It
-// decides which row is active, where the card sits, and where the leader elbow goes.
+// decides which row is active and where the card sits.
 // Enhancement only — without JS the authored gallery carries all nine.
 // Reduced motion still walks: the highlight and the card only ever move with the finger, and that
 // is the content, not decoration. Bailing here left a phone with Reduce Motion on — a common
@@ -29,12 +29,6 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
   section.setAttribute('data-driven', '');
 
   const rows = Array.from(chart.querySelectorAll<HTMLElement>('.sp-row'));
-  const leader = document.getElementById('spLeader');
-  const line = leader?.querySelector('polyline');
-  const phone = window.matchMedia('(max-width: 860px)');
-  // read once from the markup — the same numbers the CSS lays the bars out with, so the leader
-  // can never disagree with the chart it is pointing at
-  const tipPct = rows.map((r) => parseFloat(r.style.getPropertyValue('--tip')));
 
   const HOLD = 0.34;   // share of each segment spent parked on an item, not travelling
   // The walk finishes before the scroll does. p = 1 is the exact instant the sticky stage releases,
@@ -43,7 +37,7 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
   const WALK = 0.88;
   // The card travels a share of the column's SLACK (see prism.css), not of its height, so these
   // are damping only — the card cannot leave the stage at any value. Short of the ends so it
-  // breathes rather than butting the column's edges; the leader carries the precise tie.
+  // breathes rather than butting the column's edges.
   const TOP_LO = 10, TOP_HI = 90;
 
   // The highlight dwells on each item, then moves; walking at constant speed would leave you
@@ -78,7 +72,6 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
       `<path class="ln" d="${sp.d}"/>` +
       `<circle class="dot" cx="${sp.endX.toFixed(1)}" cy="${sp.endY.toFixed(1)}" r="2.8"/>`;
     rows.forEach((r, k) => r.toggleAttribute('data-on', k === i));
-    leader?.style.setProperty('--good', it.color);
     if (active !== -1) {                 // restart the swap fade; not on first paint
       card.removeAttribute('data-swap');
       void card.offsetWidth;             // force the reflow that lets the animation retrigger
@@ -87,20 +80,6 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
     if (active === -1) shown = it.pct;   // first paint matches the server-rendered number
     target = it.pct;
     active = i;
-  }
-
-  // Reading getBoundingClientRect() every frame thrashes layout, so the boxes the leader needs are
-  // cached here and only re-read on resize. Coordinates are relative to the chart's own box, which
-  // is the leader svg's coordinate system.
-  let box = { w: 0, h: 0, reserve: 0, cardL: 0, colT: 0, colH: 0 };
-  function measure() {
-    const col = card.parentElement as HTMLElement;
-    const c = chart!.getBoundingClientRect(), k = card.getBoundingClientRect(), q = col.getBoundingClientRect();
-    box = {
-      w: c.width, h: c.height,
-      reserve: parseFloat(getComputedStyle(rows[0]).marginLeft) || 0,
-      cardL: k.left - c.left, colT: q.top - c.top, colH: q.height,
-    };
   }
 
   let cur = 0, tgt = 0, raf = 0, last = 0;
@@ -133,20 +112,7 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
     const { at, frac } = walk(cur);
     setActive(at);
 
-    const topPct = TOP_LO + (TOP_HI - TOP_LO) * frac;
-    card.style.setProperty('--top', `${topPct.toFixed(2)}%`);
-
-    // the leader is hidden by CSS on a phone, so none of this is worth doing there
-    if (line && !phone.matches) {
-      const rowY = ((at + 0.5) / N) * box.h;
-      const plotL = box.reserve, plotW = box.w - 2 * box.reserve;
-      const tipX = plotL + (tipPct[at] / 100) * plotW;
-      const cardY = box.colT + (topPct / 100) * (box.colH - card.offsetHeight) + card.offsetHeight / 2;
-      const midX = (tipX + box.cardL) / 2;
-      line.setAttribute('points',
-        `${tipX.toFixed(1)},${rowY.toFixed(1)} ${midX.toFixed(1)},${rowY.toFixed(1)} ` +
-        `${midX.toFixed(1)},${cardY.toFixed(1)} ${box.cardL.toFixed(1)},${cardY.toFixed(1)}`);
-    }
+    card.style.setProperty('--top', `${(TOP_LO + (TOP_HI - TOP_LO) * frac).toFixed(2)}%`);
 
     section.toggleAttribute('data-walking', cur > 0.02);
     if (shown !== target) {
@@ -178,8 +144,7 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
   });
 
   window.addEventListener('scroll', () => { tgt = progress(); exit(); schedule(); }, { passive: true });
-  window.addEventListener('resize', () => { measure(); tgt = progress(); exit(); schedule(); });
-  measure();
+  window.addEventListener('resize', () => { tgt = progress(); exit(); schedule(); });
   tgt = cur = progress();
   exit();
   frame(performance.now());
