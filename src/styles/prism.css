@@ -10,16 +10,22 @@
 @import './nine.css';
 
 /* --reserve is the label inset on BOTH sides of the plot, so an active tip label can never cross
-   into the card column. 12rem is sized off the widest active label ("College +248%"); the clamp's
-   floor is what keeps a plot at 880px wide. */
-.prism { --rule: var(--baseline); --reserve: clamp(6rem, 12vw, 12rem); }
+   into the card column or off the stage. 12rem is sized off the widest active label — measured,
+   that is "Healthcare +98%" at 178px, not the longest number. The FLOOR is what has to hold at
+   880px: an active label at the plot's right edge (College, tip = 100%) has the reserve plus the
+   stage's column gap to sit in, and one at the left edge (TV, tip = 0%) has the reserve plus the
+   stage's padding. 6rem left both 46px short and put College's label on the card. */
+.prism { --rule: var(--baseline); --reserve: clamp(10.5rem, 13vw, 12rem); }
 
 .pr-scroll { position: relative; }
 .pr-stage {
   position: sticky; top: var(--mast); height: calc(100dvh - var(--mast));
   overflow: clip; isolation: isolate;
   box-sizing: border-box;                 /* the padding must come OUT of the width, not add to it */
-  display: grid; grid-template-columns: minmax(0, 1fr) 27rem;
+  /* the card is 27rem wherever there is room for it. It gives width back only below ~1450px,
+     where a fixed 27rem plus two full label reserves left the plot at 131px — a nine-bar chart
+     narrower than the phone's. */
+  display: grid; grid-template-columns: minmax(0, 1fr) clamp(18rem, 30vw, 27rem);
   gap: clamp(1rem, 3vw, 3rem); padding-inline: clamp(1rem, 4vw, 3.5rem);
   /* the axis label sits above the chart's first row and the dashed line overhangs both ends, so
      the stage owes them a little air — without it "100" is clipped by `overflow: clip` */
