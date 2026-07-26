@@ -50,7 +50,14 @@ a { color: inherit; }
    labelled directly — the same readout the gallery below uses (name in Franklin, % in mono). */
 .base { stroke: var(--baseline); stroke-width: 1.25; stroke-dasharray: 4 4; }
 .baselbl { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-muted); }
-.emoji { text-anchor: middle; dominant-baseline: central; }
+/* the specimen plates (src/lib/marks.ts). Defined once, off-canvas, and <use>d everywhere.
+   display:none would break the references, so it's a zero-box absolute instead. */
+.mark-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+/* At 24–30px the hatching is mud and a hairline contour disappears, so the chart runs contour-only
+   on a heavier weight. Same geometry as the 320px hall specimen — only these knobs differ. */
+.mark { --sw: 6; --hw: 0; --hatch: 0; --wash: 0.16; }
+/* leader from a bar down to the lower of the two staggered name rows on a phone */
+.gtick { stroke: var(--grid-strong); stroke-width: 1; }
 .val {
   font-family: var(--font-mono); font-weight: 400; text-anchor: middle;
   letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
@@ -107,6 +114,12 @@ a { color: inherit; }
 .cap .note { display: block; margin-top: var(--sp-2); font-size: var(--fs-foot); font-weight: 400; color: var(--ink-muted); }
 .cap .u { color: var(--pole-up); }
 .cap .d { color: var(--pole-down); }
+/* A phone held sideways has ~326px of stage, and a 9rem caption well was taking half of it — the
+   chart was left with about 55px to draw a 380-point range in. The captions are two lines here. */
+@media (max-height: 560px) {
+  .capbox { min-height: 5.5rem; padding-top: 0.35rem; }
+  .cap { font-size: clamp(0.95rem, 0.9rem + 0.4vw, 1.1rem); }
+}
 /* static (no-JS / reduced-motion): stack the captions in normal flow */
 :root:not([data-js-active]) .capbox { min-height: 0; padding-top: var(--sp-5); }
 :root:not([data-js-active]) .cap { position: static; inset: auto; opacity: 1; transform: none; margin-bottom: var(--sp-4); }

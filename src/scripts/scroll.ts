@@ -14,14 +14,10 @@ const data = seriesData as unknown as SeriesData;
 const NS = 'http://www.w3.org/2000/svg';
 
 /* ---- goods: ascending real-2024 endpoint = a rising staircase left→right ---- */
-const EMOJI: Record<string, string> = {
-  tv: '📺', clothing: '👕', gas: '⛽', eggs: '🥚', stamp: '✉️',
-  rent: '🏠', childcare: '🍼', healthcare: '🏥', college: '🎓',
-};
 interface Bar {
   id: string; good: Good; end: number; pole: 'up' | 'down';
   real: (number | null)[]; firstReal: number;
-  rect: SVGElement; em: SVGElement; val: SVGElement; lab: SVGElement;
+  rect: SVGElement; em: SVGElement; val: SVGElement; lab: SVGElement; tick: SVGElement;
 }
 const goods = [...data.goods].sort((a, b) => a.realIndexToday - b.realIndexToday);
 const ORDER = goods.map((g) => g.id);
@@ -67,7 +63,8 @@ const activeGood = (p: number): string | null => {
 };
 
 /* ---- geometry (measured, responsive) ---- */
-let W = 0, H = 0, PL = 0, PR = 0, PT = 0, PB = 0, PW = 0, narrow = false;
+let W = 0, H = 0, PL = 0, PR = 0, PT = 0, PB = 0, PW = 0, narrow = false, short = false;
+let MK = 34, VF = 18, VGAP = 20;   // plate size, value type size, gap between them
 const DMAX = 380;
 function measure() {
   const box = viz!.parentElement as HTMLElement;
@@ -75,12 +72,22 @@ function measure() {
   H = Math.max(220, box.clientHeight);
   viz!.setAttribute('viewBox', `0 0 ${W} ${H}`);
   narrow = W < 560;
+  // a phone held sideways is wide but only ~180px of plot tall, so it needs the small stack even
+  // though it is not "narrow" — sized off height, otherwise +248% draws off the top of the svg
+  short = H < 430;
+  MK = short ? 20 : narrow ? 24 : 34;         // the specimen plate above each bar
+  VF = short ? 13 : narrow ? 15 : 18;
+  VGAP = short ? 12 : narrow ? 16 : 20;
   // no y-axis ticks any more — the plot runs nearly edge to edge, with headroom under the bars
   // for the item names, which are now Franklin at gallery size rather than 11px mono
   PL = narrow ? 14 : 16;
   PR = W - (narrow ? 14 : 16);
-  PT = Math.round(H * 0.09);
-  PB = H - (narrow ? 50 : 46);
+  // the plate and its % sit above the tallest bar, so the ceiling has to reserve their stack —
+  // 9% of a short phone viewport does not, and college's +248% was clipping off the top
+  PT = Math.round(H * 0.09) + MK + VGAP - 6;
+  // a phone gets two staggered rows of names (nine slots across 360px is ~40px each, and
+  // "Healthcare" is 64) so the deeper row needs its own headroom
+  PB = H - (narrow ? 58 : 46);
   PW = PR - PL;
 }
 const yFor = (v: number) => PB - (clamp(v, 0, DMAX) / DMAX) * (PB - PT);
@@ -96,24 +103,55 @@ function build() {
   while (viz!.firstChild) viz!.removeChild(viz!.firstChild);
   water = mk('rect', { class: 'tide', fill: 'var(--tide)', 'fill-opacity': 0 }); viz!.appendChild(water);
   base = mk('line', { class: 'base' }); viz!.appendChild(base);
-  baselbl = mk('text', { class: 'baselbl' }, 'kept pace with inflation'); viz!.appendChild(baselbl);
+  baselbl = mk('text', { class: 'baselbl' }, 'kept pace with inflation');
   yearlbl = mk('text', { class: 'yearlbl', 'text-anchor': 'end', opacity: 0 }); viz!.appendChild(yearlbl);
   bars = goods.map((g) => {
     const rect = mk('rect', { rx: 2.5, fill: col(g.pole), 'fill-opacity': 0.9 });
-    const em = mk('text', { class: 'emoji' }, EMOJI[g.id] ?? '');
+    // the plate: one <use> of the symbol TopStory defines, tinted to the bar's own pole
+    const em = mk('use', { class: 'mark', href: `#mk-${g.id}`, style: `color:${col(g.pole)}` });
     const val = mk('text', { class: 'val', fill: col(g.pole), opacity: 0 });
     const lab = mk('text', { class: 'glab', opacity: 0 }, g.label);
-    viz!.appendChild(rect); viz!.appendChild(em); viz!.appendChild(val); viz!.appendChild(lab);
-    return { id: g.id, good: g, end: g.realIndexToday, pole: g.pole, real: g.real, firstReal: firstNonNull(g.real), rect, em, val, lab };
+    // leader for the lower of the two staggered name rows on a phone
+    const tick = mk('line', { class: 'gtick', opacity: 0 });
+    viz!.appendChild(rect); viz!.appendChild(em); viz!.appendChild(val);
+    viz!.appendChild(tick); viz!.appendChild(lab);
+    return { id: g.id, good: g, end: g.realIndexToday, pole: g.pole, real: g.real, firstReal: firstNonNull(g.real), rect, em, val, lab, tick };
   });
+  // last, so it paints over the bars: during the drain every shallow bar's readout sweeps down
+  // through the 100 line, and the fixed reference should survive that crossing, not the number
+  // that is still moving
+  viz!.appendChild(baselbl);
   layout();
 }
+/* The caption names the 100 line, so it wants to sit just above it — at the LEFT end, because the
+   goods are sorted ascending and only the shallow bars reach here (the tall ones cross the line at
+   the right). But every bar carries a plate-and-percent stack ~50px tall above its own top, and on
+   a short plot — a phone held sideways gives the whole 380-point range about 150px — one of those
+   stacks parks exactly where the caption goes. Which bar it is depends on the scale, so bound it
+   rather than special-casing: lift clear of any readout sharing the caption's lane, measured at
+   settled values so the caption never moves while you scrub. */
+function placeCaption() {
+  const fs = narrow ? 12 : 11;
+  baselbl.setAttribute('x', String(PL));
+  const capW = (baselbl as unknown as SVGTextContentElement).getComputedTextLength?.() || fs * 6;
+  const lane = PL + capW + 6;
+  // ascent, descent — generous, and +2 for the 3px paper knockout these labels are painted with
+  const up = (s: number) => s + 2, down = (s: number) => s * 0.35 + 2;
+  let y = y100() - 6;
+  for (let i = 0; i < bars.length; i++) {
+    if (xFor(i) - VF * 2.4 > lane) break;                 // ordered left→right — past the caption
+    const vb = yFor(bars[i].end) - MK - VGAP;             // that bar's settled % baseline
+    if (y + down(fs) > vb - up(VF) && y - up(fs) < vb + down(VF)) y = vb - up(VF) - down(fs) - 4;
+  }
+  baselbl.setAttribute('y', String(Math.round(y)));
+}
+
 function layout() {
   base.setAttribute('x1', String(PL)); base.setAttribute('y1', String(y100()));
   base.setAttribute('x2', String(PR)); base.setAttribute('y2', String(y100()));
-  baselbl.setAttribute('x', String(PL)); baselbl.setAttribute('y', String(y100() - 6));
-  baselbl.textContent = narrow ? 'kept pace' : 'kept pace with inflation';
-  baselbl.setAttribute('font-size', narrow ? '12' : '11');
+  baselbl.textContent = narrow || short ? 'kept pace' : 'kept pace with inflation';
+  baselbl.setAttribute('font-size', String(narrow ? 12 : 11));
+  placeCaption();
   yearlbl.setAttribute('x', String(PR)); yearlbl.setAttribute('y', String(PT + 4));
   yearlbl.setAttribute('font-size', String(narrow ? 22 : 30));
   water.setAttribute('x', String(PL)); water.setAttribute('width', String(PW));
@@ -121,12 +159,20 @@ function layout() {
   bars.forEach((b, i) => {
     const x = xFor(i);
     b.rect.setAttribute('x', String(x - bw / 2)); b.rect.setAttribute('width', String(bw));
-    b.em.setAttribute('x', String(x)); b.em.setAttribute('font-size', String(narrow ? 26 : 22));
+    b.em.setAttribute('x', String(x - MK / 2));
+    b.em.setAttribute('width', String(MK)); b.em.setAttribute('height', String(MK));
     // narrow keeps the readout small: nine slots across a phone leaves ~40px each, and a
     // gallery-sized "+248%" would run straight through its neighbours
-    b.val.setAttribute('x', String(x)); b.val.setAttribute('font-size', String(narrow ? 15 : 18));
-    b.lab.setAttribute('x', String(x)); b.lab.setAttribute('font-size', '14');
-    b.lab.setAttribute('y', String(PB + (narrow ? 20 : 22)));
+    b.val.setAttribute('x', String(x)); b.val.setAttribute('font-size', String(VF));
+    // Names always show. They used to be hidden at this width and revealed one at a time by the
+    // tour beats — but those beats were removed with the old Ranking section, so a phone reached
+    // the payoff chart and found nine unlabelled drawings. Two staggered rows fit all nine, and
+    // the lower row gets a leader so it stays obvious which bar it belongs to.
+    const row2 = narrow && i % 2 === 1;
+    b.lab.setAttribute('x', String(x)); b.lab.setAttribute('font-size', String(narrow ? 11 : 14));
+    b.lab.setAttribute('y', String(PB + (narrow ? (row2 ? 33 : 17) : 22)));
+    b.tick.setAttribute('x1', String(x)); b.tick.setAttribute('x2', String(x));
+    b.tick.setAttribute('y1', String(PB + 3)); b.tick.setAttribute('y2', String(PB + 22));
   });
 }
 
@@ -176,9 +222,10 @@ function renderBars(p: number) {
     const y = yFor(v);
     b.rect.setAttribute('y', String(y)); b.rect.setAttribute('height', String(Math.max(0, PB - y)));
     b.rect.setAttribute('opacity', o.toFixed(3));
-    b.em.setAttribute('y', String(y - 18)); b.em.setAttribute('opacity', o.toFixed(3));
-    // wide: label the whole axis (names fit); narrow: only the active bar, so long names never collide
-    b.lab.setAttribute('opacity', narrow ? (hi === b.id ? o.toFixed(3) : '0') : (appear * labReveal * (dim ? 0.35 : 1)).toFixed(3));
+    b.em.setAttribute('y', String(y - 6 - MK)); b.em.setAttribute('opacity', o.toFixed(3));
+    const labO = appear * labReveal * (dim ? 0.35 : 1);
+    b.lab.setAttribute('opacity', labO.toFixed(3));
+    b.tick.setAttribute('opacity', (narrow && i % 2 === 1 ? labO * 0.5 : 0).toFixed(3));
 
     // value readout: the teach stamp shows cents; after the handoff every bar carries its live
     // distance from the 100 line as a percentage — with the axis ticks gone the number has to say
@@ -187,7 +234,7 @@ function renderBars(p: number) {
     if (isStamp && p < 0.235) txt = tDrain > 0.5 ? 'real ≈ 12¢' : (tRise > 0.4 ? '68¢' : '15¢');
     else if (p >= 0.30) { const d = Math.round(v - 100); txt = `${d >= 0 ? '+' : '−'}${Math.abs(d)}%`; }
     if (txt) {
-      b.val.setAttribute('y', String(y - (narrow ? 40 : 42)));
+      b.val.setAttribute('y', String(y - MK - VGAP));
       b.val.textContent = txt;
       b.val.setAttribute('opacity', o.toFixed(3));
     } else {

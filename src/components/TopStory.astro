@@ -4,6 +4,7 @@
 // own after-section into the <slot/>. Driven by scroll.ts (imported by each page).
 import seriesData from '../data/series.json';
 import type { SeriesData, Good } from '../lib/types.ts';
+import { MARK_DEFS } from '../lib/marks.ts';
 
 const data = seriesData as unknown as SeriesData;
 const { latestYear } = data.meta;
@@ -12,14 +13,11 @@ const stamp = g('stamp');
 const gas = g('gas');
 const eggs = g('eggs');
 
-const EMOJI: Record<string, string> = {
-  tv: '📺', clothing: '👕', gas: '⛽', eggs: '🥚', stamp: '✉️',
-  rent: '🏠', childcare: '🍼', healthcare: '🏥', college: '🎓',
-};
 const sky = [...data.goods].sort((a, b) => a.realIndexToday - b.realIndexToday);
 const SW = 1000, SH = 560, SDMAX = 380;
+const SMK = 34;   // plate size above each bar — matches scroll.ts's wide-screen stack
 // no y-axis ticks any more, so the plot runs nearly edge to edge
-const sPL = 16, sPR = SW - 16, sPT = Math.round(SH * 0.09), sPB = SH - 46, sPW = sPR - sPL;
+const sPL = 16, sPR = SW - 16, sPT = Math.round(SH * 0.09) + SMK + 14, sPB = SH - 46, sPW = sPR - sPL;
 const syFor = (v: number) => sPB - (Math.max(0, Math.min(SDMAX, v)) / SDMAX) * (sPB - sPT);
 const sSlot = sPW / sky.length;
 const sBarW = Math.min(56, sSlot * 0.52);
@@ -28,9 +26,13 @@ const skyBars = sky.map((gd, i) => {
   const x = sPL + (i + 0.5) * sSlot;
   const y = syFor(gd.realIndexToday);
   const pct = Math.round(gd.realIndexToday - 100);
-  return { gd, x, y, h: sPB - y, pct, color: gd.pole === 'up' ? 'var(--pole-up)' : 'var(--pole-down)', emoji: EMOJI[gd.id] };
+  return { gd, x, y, h: sPB - y, pct, color: gd.pole === 'up' ? 'var(--pole-up)' : 'var(--pole-down)' };
 });
 ---
+{/* The nine specimen plates, defined once. Everything that draws a good — this chart, the live
+    #viz the engine builds, the hall, the authored gallery — is a <use> of one of these. */}
+<svg class="mark-defs" aria-hidden="true" set:html={MARK_DEFS}></svg>
+
 <header class="masthead">
   <span class="title">The Real Price of Everything</span>
   <span class="src">1980&ndash;{latestYear} · real, inflation-adjusted</span>
@@ -71,8 +73,8 @@ const skyBars = sky.map((gd, i) => {
           {skyBars.map((b) => (
             <g>
               <rect x={b.x - sBarW / 2} y={b.y} width={sBarW} height={b.h} rx="2.5" fill={b.color} fill-opacity="0.9" />
-              <text class="emoji" x={b.x} y={b.y - 18} font-size="22">{b.emoji}</text>
-              <text class="val" x={b.x} y={b.y - 42} font-size="18" fill={b.color}>{b.pct >= 0 ? '+' : '−'}{Math.abs(b.pct)}%</text>
+              <use class="mark" href={`#mk-${b.gd.id}`} x={b.x - SMK / 2} y={b.y - 6 - SMK} width={SMK} height={SMK} style={`color:${b.color}`} />
+              <text class="val" x={b.x} y={b.y - 20 - SMK} font-size="18" fill={b.color}>{b.pct >= 0 ? '+' : '−'}{Math.abs(b.pct)}%</text>
               <text class="glab" x={b.x} y={sPB + 22} font-size="14">{b.gd.label}</text>
             </g>
           ))}

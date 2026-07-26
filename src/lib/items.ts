@@ -1,5 +1,6 @@
 // Shared 9-item model for the "after" variations. Ranked best real deal → worst (ascending
-// real-2024 index). Colour is diverging *within the top chart's own two poles* — goods/held run
+// real-2024 index). The drawing for each good lives in marks.ts and is referenced by id.
+// Colour is diverging *within the top chart's own two poles* — goods/held run
 // cool, services run warm — so the gallery speaks the same language as the drain-the-tide chart
 // instead of inventing a nine-hue rainbow. Derived from series.json so every number traces to the
 // same source as the top chart.
@@ -8,10 +9,6 @@ import type { SeriesData } from './types.ts';
 
 const data = seriesData as unknown as SeriesData;
 
-const EMOJI: Record<string, string> = {
-  tv: '📺', clothing: '👕', gas: '⛽', eggs: '🥚', stamp: '✉️',
-  rent: '🏠', childcare: '🍼', healthcare: '🏥', college: '🎓',
-};
 const HEAD: Record<string, string> = {
   tv: 'Off the bottom', clothing: 'Quietly cheaper', gas: 'Cheaper than 1980',
   eggs: 'Right where it began', stamp: 'Your dollar shrank', rent: "Can't opt out",
@@ -40,7 +37,7 @@ const maxOf = (gs: Good[]) => Math.max(...gs.map((g) => Math.abs(dev(g))));
 const maxDown = maxOf(downs), maxUp = maxOf(ups), maxAll = Math.max(maxDown, maxUp);
 
 export interface Item {
-  id: string; label: string; emoji: string; head: string; blurb: string;
+  id: string; label: string; head: string; blurb: string;
   idx: number; pct: number; real: (number | null)[]; pole: 'up' | 'down';
   hue: number; mag: number; lift: number;
   color: string; colorInk: string; rise: boolean;
@@ -57,7 +54,7 @@ export const ITEMS: Item[] = ranked.map((g) => {
   const h = hue.toFixed(1);
   const L = 0.645 - 0.135 * mag, C = 0.075 + 0.115 * mag;            // farther from 100 = deeper
   return {
-    id: g.id, label: g.label, emoji: EMOJI[g.id], head: HEAD[g.id], blurb: BLURB[g.id],
+    id: g.id, label: g.label, head: HEAD[g.id], blurb: BLURB[g.id],
     idx: g.realIndexToday, pct: Math.round(dev(g)), real: g.real, pole: g.pole,
     hue, mag,
     lift: Math.sign(dev(g)) * Math.sqrt(Math.abs(dev(g)) / maxAll),

@@ -49,6 +49,12 @@
 }
 .pr-spec[data-far] { visibility: hidden; }
 .pr-spec .nine-obj { width: 100%; height: 100%; }
+/* the plaque hangs off the bottom of the specimen and inherits its 3D transform, so it recedes
+   with the object instead of floating in front of the hall */
+.pr-plate {
+  position: absolute; top: 100%; left: 50%; width: max-content;
+  transform: translate(-50%, 0.7rem);
+}
 
 /* ---- HUD: the active specimen's verdict, on paper ---- */
 .pr-hud {
@@ -77,6 +83,16 @@
 /* the bar is 3px of ink; the tap target is half the gap either side, so the nine slots tile the
    rail with no dead zones between them */
 .pr-rail li::after { content: ''; position: absolute; inset: -0.475rem 0; }
+/* hovering a tick says which one it is — nine anonymous marks are a decoration, nine named ones
+   are a map. Sits to the left of the rail so it never leaves the stage. */
+.pr-rail li::before {
+  content: attr(data-name); position: absolute; right: calc(100% + 0.6rem); top: 50%;
+  transform: translateY(-50%); white-space: nowrap; pointer-events: none;
+  font-weight: 600; font-size: 0.8rem; letter-spacing: -0.01em; color: var(--good-ink);
+  background: var(--paper); padding: 1px 0.4em; border-radius: 2px;
+  opacity: 0; transition: opacity .2s ease;
+}
+.pr-rail li:hover::before { opacity: 1; }
 .pr-rail i {
   position: absolute; top: 0; left: 50%; height: 3px; border-radius: 1.5px;
   width: calc(6px + var(--w) * 44px); background: var(--good); opacity: 0.34;
@@ -95,6 +111,16 @@
   font-family: var(--font-mono); font-size: 0.68rem; color: var(--ink-faint);
 }
 
+/* the rail's own caption. The pointer type decides the verb, so a phone is never told to click. */
+.pr-raillbl {
+  position: absolute; z-index: 4; right: clamp(0.75rem, 2.5vw, 2.25rem); top: var(--eye);
+  width: 104px; text-align: center; transform: translateY(5.4rem);
+  font-family: var(--font-mono); font-size: 0.62rem; color: var(--ink-faint);
+  transition: opacity .4s ease;
+}
+.pr-raillbl::after { content: 'click to jump'; }
+@media (pointer: coarse) { .pr-raillbl::after { content: 'tap to jump'; } }
+
 .pr-hint {
   position: absolute; z-index: 4; left: 50%; bottom: clamp(0.75rem, 3vh, 1.5rem);
   transform: translateX(-50%);
@@ -102,7 +128,11 @@
   animation: prFloat 2.6s ease-in-out infinite;
   transition: opacity .4s ease;
 }
-.prism[data-walking] .pr-hint { opacity: 0; }   /* a first-step affordance, not permanent chrome */
+/* a first-step affordance, not permanent chrome. `animation: none` is load-bearing: prFloat also
+   sets opacity, and a running animation outranks this rule — so the hint was still sitting there
+   on specimen nine, telling you to start scrolling. */
+.prism[data-walking] .pr-hint,
+.prism[data-walking] .pr-raillbl { opacity: 0; animation: none; }
 @keyframes prFloat { 0%, 100% { transform: translate(-50%, 0); opacity: 0.5; } 50% { transform: translate(-50%, 5px); opacity: 1; } }
 
 /* ---- gating: the hall only exists once the driver is live ---- */
@@ -134,6 +164,17 @@
   }
   .pr-hud .nine-blurb { max-width: none; }
   .pr-railtag, .pr-hint { display: none; }
+  /* the object is ~150px here, so the plaque steps down with it rather than out-measuring it */
+  .pr-plate { font-size: 12px; letter-spacing: 0.14em; padding-top: 6px; }
+  .pr-plate { transform: translate(-50%, 0.5rem); }
+  /* the hover chip has nowhere to go beside a full-bleed horizontal strip */
+  .pr-rail li::before { display: none; }
+  /* the strip is the phone's only cross-item view AND its only way to skip — say so, once */
+  .pr-raillbl {
+    right: auto; left: 0; top: auto; width: 100%;
+    bottom: calc(var(--strip-bot) + var(--strip) + 0.1rem);
+    transform: none;
+  }
 
   /* A phone has no edge to spare, so the rail stands back up into the skyline it was derived from:
      nine bars off the same dashed 100 line, full-bleed across the bottom. It is the only cross-item
@@ -166,6 +207,7 @@
   .prism { --strip: 44px; --strip-bot: calc(0.75rem + env(safe-area-inset-bottom, 0px)); }
   .pr-hud .nine-pct { font-size: clamp(2rem, 1.2rem + 3vw, 3rem); }
   .pr-hud .nine-spark { display: none; }
+  .pr-plate { font-size: 11px; padding-top: 5px; }
   .pr-rail i,
   .pr-rail li[data-side='down'] i { height: calc(2px + var(--w) * 16px); }
 }
@@ -178,6 +220,15 @@
   .prism { --eye: 42%; --obj: min(30vmin, 30dvh); --hall-lift: 9dvh; --strip: 40px; }
   .pr-spec { left: 68%; }
   .pr-hud { left: 1rem; right: auto; width: min(22rem, 46vw); }
+  /* the HUD takes the left column here, so the line's own label has to leave it — it was sitting
+     under the item name at eye level */
+  .pr-rulelbl { left: auto; right: 1rem; }
+  /* and the rule itself has to start after the HUD, or it draws straight through the item name.
+     It only has to reach the specimen, which lives at 68%. */
+  .pr-rule {
+    -webkit-mask-image: linear-gradient(90deg, transparent 44%, #000 54%, #000 88%, transparent);
+    mask-image: linear-gradient(90deg, transparent 44%, #000 54%, #000 88%, transparent);
+  }
   .pr-rail i,
   .pr-rail li[data-side='down'] i { height: calc(2px + var(--w) * 14px); }
 }
@@ -186,6 +237,7 @@
    moves without the finger: the floating hint, the HUD's entrance, the rail's highlight tween. */
 @media (prefers-reduced-motion: reduce) {
   .pr-hint { animation: none; }
-  .pr-hud { transition: none; }
-  .pr-rail i { transition: none; }
+  /* the affordances have to snap too — a 400ms cross-fade is still motion nobody asked for, and
+     it left "scroll ↓" fading over the first specimen for anyone who set the preference */
+  .pr-hud, .pr-rail i, .pr-hint, .pr-raillbl, .pr-rail li::before { transition: none; }
 }

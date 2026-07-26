@@ -24,8 +24,10 @@
   font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-muted);
 }
 
-/* --- a specimen on paper: the top chart's own emoji, blown up, with a tinted halo + contact
-       shadow so it reads as placed on the paper rather than pasted onto it --- */
+/* --- a specimen on paper: the item's own field-guide plate (src/lib/marks.ts), drawn at hero
+       size in its own hue, with a tinted halo + contact shadow so it reads as placed on the paper
+       rather than pasted onto it. This used to be the system emoji blown up 16×, which said the
+       wrong word (an envelope is not a stamp), changed picture on every OS, and went soft. --- */
 .nine-obj { position: relative; margin: 0; width: var(--obj); height: var(--obj); }
 .nine-obj::before {                        /* the halo — a wash of the item's own hue on the paper */
   content: ''; position: absolute; inset: -30%;
@@ -37,11 +39,21 @@
   background: radial-gradient(closest-side, color-mix(in oklch, var(--good) 30%, transparent), transparent 78%);
   filter: blur(6px);
 }
-.nine-emoji {
-  position: relative; display: grid; place-items: center;
-  width: 100%; height: 100%;
-  font-size: calc(var(--obj) * 0.68); line-height: 1;
+.nine-mark {
+  position: relative; display: block; width: 100%; height: 100%;
+  color: var(--good-ink);
+  /* the plate is line art, so the ink stays crisp while the wash carries the hue */
+  --sw: 1.5; --hw: 0.9; --hatch: 0.42; --wash: 0.1;
   filter: drop-shadow(0 12px 22px color-mix(in oklch, var(--good) 22%, transparent));
+}
+
+/* --- the plaque: name the specimen where the eye already is. Museum lettering — small, spaced
+       caps on a hairline rule — so it reads as the object's label, not a second headline. --- */
+.nine-plate {
+  margin: 0; text-align: center; white-space: nowrap;
+  font-weight: 600; font-size: 15px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--good-ink);
+  padding-top: 9px; border-top: 1px solid color-mix(in oklch, var(--good) 55%, transparent);
 }
 
 /* --- readouts: numbers are mono, words are Franklin — the top chart's own rule --- */

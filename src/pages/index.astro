@@ -31,10 +31,13 @@ const first = nine[0];
             <div class="pr-rule" id="prRule"></div>
             {nine.map(({ it, i }) => (
               <div class="pr-spec" id={`prSpec${i}`} data-i={i} data-far
-                   style={`--good:${it.color}; --lift:${it.lift.toFixed(3)}; --xk:${12 + (i % 2) * 26}`}>
+                   style={`--good:${it.color}; --good-ink:${it.colorInk}; --lift:${it.lift.toFixed(3)}; --xk:${12 + (i % 2) * 26}`}>
                 <figure class="nine-obj">
-                  <span class="nine-emoji">{it.emoji}</span>
+                  <svg class="nine-mark" viewBox="0 0 120 120"><use href={`#mk-${it.id}`} /></svg>
                 </figure>
+                {/* the plaque: a specimen you cannot name is a decoration. It rides the same 3D
+                    transform as the object, so it reads as part of the exhibit, not an overlay. */}
+                <p class="nine-plate pr-plate">{it.label}</p>
               </div>
             ))}
           </div>
@@ -58,10 +61,13 @@ const first = nine[0];
           <p class="pr-railtag" aria-hidden="true">100</p>
           <ol class="pr-rail" id="prRail" aria-hidden="true">
             {nine.map(({ it, i }) => (
-              <li data-i={i} data-side={it.rise ? 'up' : 'down'}
-                  style={`--good:${it.color}; --w:${Math.abs(it.lift).toFixed(3)}`}><i></i></li>
+              <li data-i={i} data-side={it.rise ? 'up' : 'down'} data-name={it.label}
+                  style={`--good:${it.color}; --good-ink:${it.colorInk}; --w:${Math.abs(it.lift).toFixed(3)}`}><i></i></li>
             ))}
           </ol>
+          {/* the rail is the only map of the nine and the only way to skip around it — without
+              this it reads as chrome and nobody touches it */}
+          <p class="pr-raillbl" aria-hidden="true"></p>
 
           <p class="pr-hint" aria-hidden="true">scroll ↓</p>
         </div>
@@ -71,7 +77,7 @@ const first = nine[0];
         {nine.map(({ it, i, spark }) => (
           <li style={`--good:${it.color}; --good-ink:${it.colorInk}`}>
             <figure class="nine-obj">
-              <span class="nine-emoji" aria-hidden="true">{it.emoji}</span>
+              <svg class="nine-mark" viewBox="0 0 120 120" aria-hidden="true"><use href={`#mk-${it.id}`} /></svg>
             </figure>
             <div>
               <p class="nine-rank">{String(i + 1).padStart(2, '0')} / 09 · real price today</p>

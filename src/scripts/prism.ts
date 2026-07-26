@@ -30,7 +30,10 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
 
   const gapOf = () => parseFloat(getComputedStyle(section).getPropertyValue('--gap')) || 900;
   let GAP = gapOf();
-  const AHEAD = 1.5;   // how many gaps ahead a specimen starts fading up out of the paper
+  // Exactly one gap: at 1.5 the next specimen sat at 43% opacity the whole time you were parked on
+  // the current one, so a t-shirt hung off the side of the television and read as a render bug
+  // rather than as depth. At 1.0 it is invisible while you dwell and fades up only as you travel.
+  const AHEAD = 1.0;   // how many gaps ahead a specimen starts fading up out of the paper
   const PAST = 0.45;   // and how fast it fades once you've flown through it
   const HOLD = 0.34;   // share of each segment spent parked on a specimen, not travelling
 
@@ -78,6 +81,22 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
     const total = scroll.offsetHeight - stage.offsetHeight;
     return clamp(-scroll.getBoundingClientRect().top / (total || 1));
   };
+
+  // Past the last specimen the sticky stage releases and scrolls away with the page. Because the
+  // HUD is anchored to the stage's bottom and the specimen sits at eye level, the last thing on
+  // screen was a verdict with an empty hall above it and a severed rail beside it. Fade the whole
+  // stage over its exit so the hall closes instead of coming apart.
+  function exit() {
+    const h = stage.offsetHeight || 1;
+    const bottom = scroll.getBoundingClientRect().bottom;
+    // Once released the stage's top rides at (container bottom − h), so `bottom` counts the exit
+    // down from h. It cannot simply run to 0: the page below the hall is shorter than the stage is
+    // tall, so the container never clears the screen and a half-lit verdict stayed pinned over the
+    // sources. End the fade at whatever `bottom` reads once the document is fully scrolled.
+    const end = Math.max(0, bottom + window.scrollY -
+      (document.documentElement.scrollHeight - window.innerHeight));
+    stage.style.opacity = clamp((bottom - end) / Math.max(1, h - end)).toFixed(3);
+  }
 
   function frame(now = performance.now()) {
     raf = 0;
@@ -130,8 +149,9 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
     window.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
   });
 
-  window.addEventListener('scroll', () => { tgt = progress(); schedule(); }, { passive: true });
-  window.addEventListener('resize', () => { GAP = gapOf(); tgt = progress(); schedule(); });
+  window.addEventListener('scroll', () => { tgt = progress(); exit(); schedule(); }, { passive: true });
+  window.addEventListener('resize', () => { GAP = gapOf(); tgt = progress(); exit(); schedule(); });
   tgt = cur = progress();
+  exit();
   frame(performance.now());
 }
