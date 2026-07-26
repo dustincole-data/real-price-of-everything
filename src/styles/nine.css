@@ -13,8 +13,15 @@
   color: var(--ink);
 }
 
-/* --- section opener: hands off from the drain-the-tide captions, same measure + type --- */
-.nine-intro { padding-block: clamp(var(--sp-6), 8vh, var(--sp-8)) clamp(var(--sp-4), 3vh, var(--sp-5)); }
+/* --- section opener: hands off from the drain-the-tide captions, same measure + type ---
+       It clears the viewport on purpose. Without the min-height the sticky stage pinned while
+       "Nine things, one at a time." was still on screen, so the chart and the line introducing it
+       shared a screen and the reveal was spent before it happened. */
+.nine-intro {
+  padding-block: clamp(var(--sp-6), 8vh, var(--sp-8)) clamp(var(--sp-4), 3vh, var(--sp-5));
+  min-height: calc(100dvh - var(--mast));
+  display: flex; flex-direction: column; justify-content: center;
+}
 .nine-intro h2 { font-size: var(--fs-beat); max-width: 26ch; }
 .nine-intro .lede { color: var(--ink-muted); max-width: 54ch; margin-top: var(--sp-4); }
 .nine-intro .meta {
