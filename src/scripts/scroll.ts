@@ -205,7 +205,6 @@ function renderBars(p: number) {
     yearlbl.setAttribute('opacity', '0');
   }
 
-  const labReveal = clamp((aDrain - 0.15) / 0.5); // names fade in as the split resolves
   bars.forEach((b, i) => {
     const isStamp = i === STAMP_I;
     const appear = isStamp ? 1 : hand; // the other eight fade in over the handoff
@@ -223,7 +222,11 @@ function renderBars(p: number) {
     b.rect.setAttribute('y', String(y)); b.rect.setAttribute('height', String(Math.max(0, PB - y)));
     b.rect.setAttribute('opacity', o.toFixed(3));
     b.em.setAttribute('y', String(y - 6 - MK)); b.em.setAttribute('opacity', o.toFixed(3));
-    const labO = appear * labReveal * (dim ? 0.35 : 1);
+    // A bar and its name arrive together. The stamp is named from the first frame (appear = 1 all
+    // through the teach beat) and the other eight are named exactly as they fade in on the handoff.
+    // They used to wait for the split to resolve, which left the teach beat showing an unnamed bar
+    // and the group arriving as eight anonymous ones.
+    const labO = appear * (dim ? 0.35 : 1);
     b.lab.setAttribute('opacity', labO.toFixed(3));
     b.tick.setAttribute('opacity', (narrow && i % 2 === 1 ? labO * 0.5 : 0).toFixed(3));
 

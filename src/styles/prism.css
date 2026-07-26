@@ -1,11 +1,23 @@
-/* ===== Variation 1 · PRISM — the specimen hall =============================================
-   A white hall you fly down. Nine glass specimens hang off the same 100 line the top chart draws,
-   goods below it and services above, so the walk literally climbs. Bare paper underfoot — depth
-   comes from perspective and from specimens fading into the paper at the far end, aerial
-   perspective instead of the dark draft's bloom. CSS 3D, not WebGL: nothing here needs a glow. */
+/* ===== PRISM — the specimen hall ============================================================
+   A white hall you fly down. Nine drawn specimens, one at a time, each in the same centred place —
+   the walk is the story, not the geometry. Bare paper underfoot; depth comes from perspective and
+   from specimens fading into the paper at the far end, aerial perspective rather than bloom.
+   CSS 3D, not WebGL: nothing here needs a glow.
+   The rail on the right is this section's only chart, and carries its own dashed 100 axis. */
 @import './nine.css';
 
-.prism { --gap: 900px; --hall-lift: 210px; --eye: 46%; --obj: min(30vmin, 320px); --xspread: 1; }
+/* Every specimen stands in the same place, and it is bigger for it.
+   The scatter is gone: a per-item vertical lift off the 100 line, and a horizontal stagger across
+   the aisle. Neither survived on merit. The lift was a real encoding at a legible amplitude, but
+   only one specimen is ever visible at a time — a height with no neighbour and no rule beside it
+   is not a reading, so it cost the eye a jump on every scroll and returned nothing. The stagger
+   existed only to stop two objects overlapping into mush, which the one-gap fade now prevents.
+   Deleting both buys the whole budget back, and it goes into the drawing. */
+/* The wide layout is three columns — HUD, specimen, rail — so the drawing is capped by the LANE
+   between the other two, not just by the viewport. 41rem is the HUD's floor (32rem, below) plus the
+   rail and its gutters. Without this term the floor that keeps the specimen off the verdict simply
+   pushed it into the rail instead: 43px over it at 880×620. */
+.prism { --gap: 900px; --eye: 46%; --obj: min(46vmin, 420px, calc(100vw - 42rem)); }
 
 .pr-scroll { position: relative; }
 .pr-stage {
@@ -14,36 +26,23 @@
   perspective: 1100px; perspective-origin: 50% var(--eye);
 }
 
-/* ---- the hall ---- */
+/* ---- the hall ----
+   No 100 line here any more: one specimen is visible at a time, so a rule across the hall had
+   nothing plotted against it. The HUD states the number and the section opener says what it means. */
 .pr-hall { position: absolute; inset: 0; transform-style: preserve-3d; }
 
-/* the 100 line: the same dashed rule the top chart draws, at eye level. A line lying at eye height
-   in a 3D hall projects to exactly this anyway, so it's drawn flat — crisper, and no oversized
-   layer to rasterise. */
-.pr-rule {
-  position: absolute; left: 0; right: 0; top: var(--eye); height: 1px;
-  background: repeating-linear-gradient(90deg, var(--rule) 0 6px, transparent 6px 13px);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
-}
-/* the chip's paper knockout is opaque, and the rule is 1px tall — so any vertical overlap erases
-   the dashes for the chip's full width. Sit it fully clear of the line rather than on it: at 390
-   the chip reaches past where the rule's mask turns opaque, so a 1px touch cost 129px of dashes. */
-.pr-rulelbl {
-  position: absolute; left: clamp(1rem, 4vw, 3.5rem); top: var(--eye);
-  transform: translateY(calc(-100% - 3px)); z-index: 3;
-}
-
 /* ---- a specimen ----
-   --xk staggers them across the aisle so two glass objects never stack up into mush; --lift hangs
-   each one above or below the 100 line by how far its real price actually strayed from it */
+   One place, every time: the only thing scroll moves is --z, the camera's distance down the hall.
+   `left` is centred but floored clear of the HUD's column, because on a wide screen the HUD is a
+   left column rather than a bottom band and the two share a row. Without the floor a resized
+   window — around 880×620 — dropped a 211px drawing straight onto the verdict text; the stagger
+   this replaces had been hiding that by accident. max() keeps dead-centre wherever there is room
+   (anything from ~1450px up) and only nudges right when the column would otherwise be hit. */
 .pr-spec {
-  position: absolute; left: 50%; top: var(--eye);
+  position: absolute; top: var(--eye);
+  left: max(50%, calc(33rem + var(--obj) / 2));
   width: var(--obj); height: var(--obj); margin: calc(var(--obj) / -2) 0 0 calc(var(--obj) / -2);
-  transform: translate3d(
-    calc(var(--xk) * var(--xspread) * 1vmin),
-    calc(var(--lift) * var(--hall-lift) * -1),
-    var(--z, 0px));
+  transform: translateZ(var(--z, 0px));
   opacity: var(--o, 0);
   will-change: transform, opacity;
 }
@@ -67,7 +66,9 @@
 .pr-hud.is-on { opacity: 1; transform: none; }
 .pr-hud .nine-name { font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem); margin-top: 0.2rem; }
 .pr-hud .nine-pct { font-size: clamp(2.6rem, 1.8rem + 4.4vw, 4.6rem); margin: 0.1rem 0 0.35rem; }
-.pr-hud .nine-head { font-size: 1.05rem; }
+/* a real step down from the number and up from the blurb — at 1.05 against the blurb's 0.98 it was
+   a 1px difference carried entirely by weight, so it read as a bolded first line of the paragraph */
+.pr-hud .nine-head { font-size: 1.2rem; }
 .pr-hud .nine-blurb { font-size: 0.98rem; margin-top: 0.35rem; }
 .pr-hud .nine-spark { width: 168px; height: 52px; margin-top: 0.9rem; }
 
@@ -140,31 +141,35 @@
 
 @media (max-width: 860px) {
   .prism {
-    /* Desktop keeps the HUD in a left column and the specimens centre-right, so the two never meet.
-       A phone stacks them — HUD full-width along the bottom, specimens down the middle — so the
-       hall has to be sized to clear the text rather than inherit the wide-screen numbers: a smaller
-       specimen on a shorter lift, hung higher, which keeps every one of the nine above the HUD.
-       --xspread goes to 0 because the stagger only exists to stop objects stacking across a wide
-       aisle; on a narrow screen it just makes the specimen jump side to side as you scroll.
-       The specimen and its lift are sized in dvh, not px: the HUD is a near-constant block of text,
-       so the shorter the screen the bigger its share, and fixed pixel values that clear it at 844
-       land straight on it at 740. */
-    --obj: min(37vmin, 150px, 20dvh); --hall-lift: 9.5dvh; --gap: 760px; --eye: 26%; --xspread: 0;
+    /* A phone stacks what the wide layout puts side by side: HUD full-width along the bottom,
+       specimen down the middle. So the drawing is bounded by the text below it, not by a column
+       beside it — vmin sets the ambition and svh is the safety. The height term is what actually
+       binds, and 360×740 is the case that binds hardest: tall enough to keep the HUD's sparkline,
+       narrow enough to cap the drawing. svh not dvh on purpose — dvh is the *dynamic* viewport, so
+       the drawing would grow and shrink as the URL bar collapsed while you were looking at it. */
+    --obj: min(70vmin, 270px, 30svh); --gap: 760px; --eye: 22%;
     --strip: 62px;
     --strip-bot: calc(0.6rem + env(safe-area-inset-bottom, 0px));
   }
   .pr-stage { perspective: 820px; }
-  /* the specimens run down the middle now, and the full label reaches far enough across to clip
-     them — so it says what the top chart's own label says at this width */
-  .pr-rulelbl { left: 1rem; }
-  .pr-rulelbl-rest { display: none; }
+  /* the HUD is a bottom band here, not a left column, so the specimen wants the middle — and the
+     wide-screen floor would otherwise shove it clean off a 390px screen */
+  .pr-spec { left: 50%; }
   .pr-hud {
     left: 1rem; right: 1rem; width: auto;
     bottom: calc(var(--strip-bot) + var(--strip) + 0.9rem);
   }
   .pr-hud .nine-blurb { max-width: none; }
-  .pr-railtag, .pr-hint { display: none; }
-  /* the object is ~150px here, so the plaque steps down with it rather than out-measuring it */
+  .pr-hint { display: none; }
+  /* The strip's dashed line is the 100 axis, and this is the only thing that names it on a phone:
+     the masthead's "real, inflation-adjusted" is hidden at this width, and below 700px tall the
+     HUD sheds its sparkline too. Without it "+19%" has nothing to be 19% of. Sits above the strip
+     beside "tap to jump", and unlike that cue it does NOT fade once you start walking. */
+  .pr-railtag {
+    right: auto; left: 0.5rem; top: auto; width: auto; transform: none;
+    bottom: calc(var(--strip-bot) + var(--strip) + 0.1rem);
+  }
+  /* the object is ~250px here, so the plaque steps down rather than out-measuring the drawing */
   .pr-plate { font-size: 12px; letter-spacing: 0.14em; padding-top: 6px; }
   .pr-plate { transform: translate(-50%, 0.5rem); }
   /* the hover chip has nowhere to go beside a full-bleed horizontal strip */
@@ -217,18 +222,12 @@
    Stacking them the way an upright phone does cannot work here, because once the HUD has taken its
    share of 390px there is no vertical room left to stand in. */
 @media (max-width: 860px) and (max-height: 560px) {
-  .prism { --eye: 42%; --obj: min(30vmin, 30dvh); --hall-lift: 9dvh; --strip: 40px; }
-  .pr-spec { left: 68%; }
+  .prism { --eye: 42%; --obj: min(36vmin, 36svh); --strip: 40px; }
   .pr-hud { left: 1rem; right: auto; width: min(22rem, 46vw); }
-  /* the HUD takes the left column here, so the line's own label has to leave it — it was sitting
-     under the item name at eye level */
-  .pr-rulelbl { left: auto; right: 1rem; }
-  /* and the rule itself has to start after the HUD, or it draws straight through the item name.
-     It only has to reach the specimen, which lives at 68%. */
-  .pr-rule {
-    -webkit-mask-image: linear-gradient(90deg, transparent 44%, #000 54%, #000 88%, transparent);
-    mask-image: linear-gradient(90deg, transparent 44%, #000 54%, #000 88%, transparent);
-  }
+  /* Same floor as the wide layout, against this block's own narrower HUD. The query says landscape
+     but it also matches short PORTRAIT windows — split-screen, a resized browser — and at 360×560
+     a flat 68% put the drawing 1.6px into the HUD. */
+  .pr-spec { left: max(68%, calc(1rem + min(22rem, 46vw) + 0.9rem + var(--obj) / 2)); }
   .pr-rail i,
   .pr-rail li[data-side='down'] i { height: calc(2px + var(--w) * 14px); }
 }

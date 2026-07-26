@@ -1,7 +1,8 @@
-// Variation 1 · PRISM — the specimen hall.
-// Scroll dollies a CSS-3D camera down a white hall of nine glass specimens, each hung off the same
-// dashed 100 line the top chart draws. No WebGL and no bloom pass: on paper, depth comes from
-// perspective plus fading into the paper itself, which is cheaper, sharper and works on a phone.
+// PRISM — the specimen hall.
+// Scroll dollies a CSS-3D camera down a white hall of nine drawn specimens. Each stands in the same
+// centred place; the only thing scroll moves is the camera's distance. No WebGL and no bloom pass:
+// on paper, depth comes from perspective plus fading into the paper itself, which is cheaper,
+// sharper and works on a phone.
 // Enhancement only — without JS the authored gallery carries all nine.
 // Reduced motion still walks the hall: the camera only ever moves with the finger, and that is the
 // content, not decoration. Bailing here left a phone with Reduce Motion on — a common setting —
@@ -34,13 +35,20 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
   // the current one, so a t-shirt hung off the side of the television and read as a render bug
   // rather than as depth. At 1.0 it is invisible while you dwell and fades up only as you travel.
   const AHEAD = 1.0;   // how many gaps ahead a specimen starts fading up out of the paper
-  const PAST = 0.45;   // and how fast it fades once you've flown through it
+  // A specimen you have passed sits at z > 0, which perspective SCALES UP — at 0.45 it was still
+  // 43% opaque while blown up ~1.2×, drifting across the rail and the verdict on its way out. Fading
+  // it over a quarter-gap keeps the fly-past small enough to stay inside its lane.
+  const PAST = 0.25;   // and how fast it fades once you've flown through it
   const HOLD = 0.34;   // share of each segment spent parked on a specimen, not travelling
+  // The walk finishes before the scroll does. p = 1 is the exact instant the sticky stage releases,
+  // so a walk that ran to p = 1 parked on the ninth specimen and immediately began sliding away —
+  // College at +248%, the whole point of the piece, was the only one that never got a dwell.
+  const WALK = 0.88;
 
   // The camera dwells on each specimen, then moves; a constant-speed dolly would leave you between
   // two half-faded objects most of the time. Same beat structure as the top chart's captions.
   function dolly(p: number) {
-    const seg = p * (N - 1);
+    const seg = clamp(p / WALK) * (N - 1);
     const i = Math.min(N - 2, Math.floor(seg));
     const k = clamp((seg - i - HOLD) / (1 - 2 * HOLD));
     return { z: (i + k * k * (3 - 2 * k)) * GAP, at: i + (k > 0.5 ? 1 : 0) };
@@ -144,7 +152,9 @@ function init(section: HTMLElement, scroll: HTMLElement, stage: HTMLElement) {
     const i = Number(li.getAttribute('data-i'));
     if (!Number.isFinite(i)) return;
     const total = scroll.offsetHeight - stage.offsetHeight;
-    const p = i >= N - 1 ? 1 : (i + HOLD / 2) / (N - 1);
+    // inverse of dolly(), including its WALK compression — without the factor every jump would
+    // land short of its specimen by the length of the trailing dwell
+    const p = WALK * (i >= N - 1 ? 1 : (i + HOLD / 2) / (N - 1));
     const top = window.scrollY + scroll.getBoundingClientRect().top + total * p;
     window.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
   });

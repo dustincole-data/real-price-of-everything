@@ -28,23 +28,21 @@
        size in its own hue, with a tinted halo + contact shadow so it reads as placed on the paper
        rather than pasted onto it. This used to be the system emoji blown up 16×, which said the
        wrong word (an envelope is not a stamp), changed picture on every OS, and went soft. --- */
+/* The halo is the only ground effect left, and it is a tint rather than a shadow.
+   What went: a "contact shadow" pinned to the bottom of the square box, and a drop-shadow filter.
+   The box is not the drawing — every plate fills it differently — so the mortarboard's shadow sat
+   80px below the lowest ink, reading as a smudge under a floating object. And additive glow needs a
+   dark ground; on near-white paper the two together muddied the hue instead of seating it. */
 .nine-obj { position: relative; margin: 0; width: var(--obj); height: var(--obj); }
 .nine-obj::before {                        /* the halo — a wash of the item's own hue on the paper */
-  content: ''; position: absolute; inset: -30%;
-  background: radial-gradient(closest-side, color-mix(in oklch, var(--good) 18%, transparent), transparent 74%);
-}
-.nine-obj::after {                         /* contact shadow: grounds it on the paper */
-  content: ''; position: absolute; left: 16%; right: 16%; bottom: 1%; height: 6%;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, color-mix(in oklch, var(--good) 30%, transparent), transparent 78%);
-  filter: blur(6px);
+  content: ''; position: absolute; inset: -22%;
+  background: radial-gradient(closest-side, color-mix(in oklch, var(--good) 13%, transparent), transparent 72%);
 }
 .nine-mark {
   position: relative; display: block; width: 100%; height: 100%;
   color: var(--good-ink);
   /* the plate is line art, so the ink stays crisp while the wash carries the hue */
   --sw: 1.5; --hw: 0.9; --hatch: 0.42; --wash: 0.1;
-  filter: drop-shadow(0 12px 22px color-mix(in oklch, var(--good) 22%, transparent));
 }
 
 /* --- the plaque: name the specimen where the eye already is. Museum lettering — small, spaced
@@ -75,14 +73,6 @@
 .nine-spark .lbl {
   font-family: var(--font-mono); font-size: 9px; fill: var(--ink-faint);
   paint-order: stroke; stroke: var(--paper); stroke-width: 3px; stroke-linejoin: round;
-}
-
-/* --- the label that names the 100 line, worded exactly as the top chart words it --- */
-.nine-rulelbl {
-  font-family: var(--font-mono); font-size: 11px; color: var(--ink-muted);
-  /* the top chart knocks paper out behind its annotations so they stay legible wherever they land;
-     same idea, as a chip, since these can drift across a specimen */
-  background: var(--paper); padding: 1px 0.45em; border-radius: 2px;
 }
 
 /* --- authored gallery: the no-JS / reduced-motion / no-3D presentation of all nine.

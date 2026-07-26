@@ -67,9 +67,14 @@ export const PLATES: Record<string, Plate> = {
     ink: [
       'M29.6 36.4C29.4 31.2 32 28.6 36.8 28.4L66.2 27.4C71 27.2 73.4 29.6 73.6 34.8L75 102.4C75.2 106 73 107.8 69.2 108L34 109C30.2 109.2 28.4 107.4 28.4 103.8Z',
       'M37.8 41C36.6 39.2 37.8 38.2 40.2 38L62.8 37.2C65.2 37.1 66 38 66.2 39.8L66.8 56.4C66.9 58.4 65.8 59.2 63.4 59.4L40 60C37.6 60.1 36.8 59 36.8 57.2Z',
-      'M75 46.8C85.6 45.8 92 51.6 92.4 61.6L92.8 83.4',
-      'M87.6 83C87.4 80.8 88.6 79.6 90.8 79.6L96 79.4C98.2 79.4 99.4 80.6 99.4 82.8L99.6 96.6C99.6 100 97.6 101.8 94.2 101.6L92.4 101.4C89.4 101.2 87.8 99.4 87.8 96.4Z',
-      'M88.2 88.6 78.6 93.4',          /* the spout, angled down — a level one reads as a cable */
+      /* The hose loops wide and the nozzle tapers to a long, steep spout. An upright rounded
+         rectangle with a short level line across it — which is what this was — reads as a computer
+         mouse on the end of a cable, not as a fuel nozzle. The loop is what carries the pump at
+         30px anyway; the spout is what stops the shape being anything else. */
+      'M75 44.6C88.4 43 96.2 50.4 96.4 62L96.6 76.4',
+      'M92.4 77C91.8 74.2 93.6 72.4 96.4 72.8C99 73.2 100.2 75.2 99.6 78.2L97.4 90.4C96.8 93.8 94.2 95 91.6 93.8C89.2 92.6 88.6 90.4 89.4 87.6Z',
+      'M91 94.2 82.4 105.4',
+      'M89.8 80.6 84.4 82.4',          /* the trigger */
       'M38.6 72.4 58.4 71.6', 'M25.4 110 80 108.6',
     ],
     hatch: ['M41 48.8 52 40.6', 'M45 55.2 61.4 42.4', 'M53.6 57.2 65 48.6', 'M40 84 62 83.2', 'M40 92 58 91.4'],
@@ -108,7 +113,9 @@ export const PLATES: Record<string, Plate> = {
 
   /* --- a roof you cannot opt out of --- */
   rent: {
-    wash: ['M30.4 57.4 60 30 89.8 56.6 90.4 104.4 30 105.6Z'],
+    /* the wash follows the roof's own outline rather than the wall line — inset to the walls it
+       left an untinted wedge under each eave, which read as a printing misregistration */
+    wash: ['M19.4 62.6 60 25.4 100.8 61.4 90.4 104.4 30 105.6Z'],
     ink: [
       'M19.4 62.6 60 25.4 100.8 61.4', 'M30.4 57.4 31 105.4', 'M89.6 56.8 90.4 104.2',
       'M24.4 106.4 96.6 104.8',

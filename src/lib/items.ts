@@ -32,7 +32,8 @@ const ups = ranked.filter((g) => g.pole === 'up');
 const dev = (g: Good) => g.realIndexToday - 100;
 // two normalisers, deliberately different:
 //   mag  — per pole, so BOTH extremes (a TV at −100%, tuition at +248%) read as fully saturated
-//   lift — across all nine, signed, so vertical position stays literally true to the 100 baseline
+//   lift — across all nine, signed, so a length stays literally true to the 100 baseline. The hall
+//          no longer hangs specimens by it; the rail's bar lengths (Math.abs) still do.
 const maxOf = (gs: Good[]) => Math.max(...gs.map((g) => Math.abs(dev(g))));
 const maxDown = maxOf(downs), maxUp = maxOf(ups), maxAll = Math.max(maxDown, maxUp);
 

@@ -19,19 +19,22 @@ const first = nine[0];
           Same lens, nine verdicts. Walk the hall from the best real bargain today to the one that
           ran away.
         </p>
+        {/* This line has to say what the hall actually does. It used to promise a vertical
+            encoding — "hung off the same line: above it beat inflation's pace" — which stopped
+            being true the moment the rule and the lift went. It now names what every number in
+            the section means, which on a phone there is no other way to learn. */}
         <p class="meta">
-          nine specimens · 1980&ndash;2024 · hung off the same line: above it beat inflation's pace,
-          below it didn't
+          nine specimens · 1980&ndash;2024 · each % is today's real price measured against its own
+          1980 price
         </p>
       </div>
 
       <div class="pr-scroll" id="prScroll">
         <div class="pr-stage" id="prStage">
           <div class="pr-hall" id="prHall" aria-hidden="true">
-            <div class="pr-rule" id="prRule"></div>
             {nine.map(({ it, i }) => (
               <div class="pr-spec" id={`prSpec${i}`} data-i={i} data-far
-                   style={`--good:${it.color}; --good-ink:${it.colorInk}; --lift:${it.lift.toFixed(3)}; --xk:${12 + (i % 2) * 26}`}>
+                   style={`--good:${it.color}; --good-ink:${it.colorInk}`}>
                 <figure class="nine-obj">
                   <svg class="nine-mark" viewBox="0 0 120 120"><use href={`#mk-${it.id}`} /></svg>
                 </figure>
@@ -41,9 +44,6 @@ const first = nine[0];
               </div>
             ))}
           </div>
-
-          <span class="nine-rulelbl pr-rulelbl" aria-hidden="true">kept pace<span
-            class="pr-rulelbl-rest"> with inflation</span></span>
 
           <div class="pr-hud is-on" id="prHud" style={`--good:${first.it.color}; --good-ink:${first.it.colorInk}`}>
             <p class="nine-rank"><span id="prRank">01</span> / 09 · real price today</p>
