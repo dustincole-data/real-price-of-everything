@@ -76,7 +76,11 @@ function measure() {
   // though it is not "narrow" — sized off height, otherwise +248% draws off the top of the svg
   short = H < 430;
   MK = short ? 20 : narrow ? 24 : 34;         // the specimen plate above each bar
-  VF = short ? 13 : narrow ? 15 : 18;
+  // nine slots across ~332px of plot is ~37px each, and at 15px "+248%" renders ~54px, so
+  // neighbouring readouts ran through each other — worst while they are all counting through the
+  // same value on the way up. MK and VGAP stay: the plate size and the stack gap are not the
+  // problem, and PT is derived from them.
+  VF = short ? 10 : narrow ? 11 : 18;
   VGAP = short ? 12 : narrow ? 16 : 20;
   // no y-axis ticks any more — the plot runs nearly edge to edge, with headroom under the bars
   // for the item names, which are now Franklin at gallery size rather than 11px mono
